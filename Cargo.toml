@@ -1,0 +1,37 @@
+[package]
+name = "tokanban"
+version = "0.1.2"
+edition = "2021"
+description = "Agent-first task management CLI for development teams using AI coding agents"
+license = "BSD-3-Clause"
+repository = "https://github.com/emeraldsystems/tokanban"
+homepage = "https://tokanban.com"
+readme = "README.md"
+keywords = ["cli", "task-management", "mcp", "agents", "kanban"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+dirs = "6"
+crossterm = "0.28"
+base64 = "0.22"
+sha2 = "0.10"
+hmac = "0.12"
+open = "5"
+tiny_http = "0.12"
+rand = "0.9"
+url = "2"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+wiremock = "0.5"
+tempfile = "3"
+assert_matches = "1.5"
+tokio-test = "0.4"
