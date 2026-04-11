@@ -1,0 +1,13 @@
+{
+  "name": "tokanban",
+  "version": "0.1.2",
+  "description": "Agent-first task management for development teams. Install the CLI, configure the MCP server, and manage tasks, projects, sprints, and workflows from Claude Code.",
+  "author": {
+    "name": "emeraldsystems",
+    "url": "https://github.com/emeraldsystems"
+  },
+  "homepage": "https://tokanban.com",
+  "repository": "https://github.com/emeraldsystems/tokanban",
+  "license": "BSD-3-Clause",
+  "keywords": ["task-management", "mcp", "agents", "kanban", "cli", "project-management", "sprints"]
+}

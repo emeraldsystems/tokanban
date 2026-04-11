@@ -56,6 +56,14 @@ tokanban task search "auth"
 - API: https://api.tokanban.com
 - Spec: See `spec/` in the repository
 
+## Claude Code Plugin
+
+This repo includes a Claude Code plugin for Tokanban. Install it to get:
+
+- **Setup skill** (`tokanban:setup`) -- guided CLI installation and MCP server configuration
+- **Tokanban skill** (`tokanban:tokanban`) -- full CLI reference with task, project, sprint, workflow, and team management
+- **MCP integration** -- auto-configures the Tokanban MCP server (set `TOKANBAN_API_KEY` env var)
+
 ## License
 
-MIT
+BSD-3-Clause

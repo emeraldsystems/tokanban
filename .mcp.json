@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "tokanban": {
+      "type": "url",
+      "url": "https://api.tokanban.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TOKANBAN_API_KEY}"
+      }
+    }
+  }
+}
