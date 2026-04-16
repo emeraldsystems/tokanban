@@ -37,7 +37,7 @@ pub enum CardSection {
 /// │ Fix auth token refresh logic                 │
 /// ├───────────────────────────────────────────────┤
 /// │ Status     In Progress    Priority   High    │
-/// │ Assignee   @sven          Sprint     12      │
+/// │ Assignee   @bob           Sprint     12      │
 /// ├───────────────────────────────────────────────┤
 /// │ Description                                   │
 /// │                                               │

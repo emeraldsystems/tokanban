@@ -1,13 +1,13 @@
 [package]
 name = "tokanban"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
-description = "Agent-first task management CLI for development teams using AI coding agents"
+description = "Agent-first task management and cross-session memory CLI for development teams using AI coding agents"
 license = "BSD-3-Clause"
 repository = "https://github.com/emeraldsystems/tokanban"
 homepage = "https://tokanban.com"
 readme = "README.md"
-keywords = ["cli", "task-management", "mcp", "agents", "kanban"]
+keywords = ["cli", "task-management", "mcp", "agents", "kanban", "memory"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]

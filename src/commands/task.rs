@@ -81,6 +81,9 @@ pub enum TaskCommand {
         /// New sprint ID
         #[arg(long)]
         sprint: Option<String>,
+        /// New description
+        #[arg(long)]
+        description: Option<String>,
     },
     /// Search tasks by free-text query
     Search {
@@ -117,8 +120,8 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
             handle_list(ctx, project.clone(), status.as_deref(), assignee.as_deref(), sprint.as_deref(), priority.as_deref(), due.as_deref(), cursor.as_deref(), *limit).await
         }
         TaskCommand::View { key } => handle_view(ctx, key).await,
-        TaskCommand::Update { key, title, status, assignee, priority, sprint } => {
-            handle_update(ctx, key, title.as_deref(), status.as_deref(), assignee.as_deref(), priority.as_deref(), sprint.as_deref()).await
+        TaskCommand::Update { key, title, status, assignee, priority, sprint, description } => {
+            handle_update(ctx, key, title.as_deref(), status.as_deref(), assignee.as_deref(), priority.as_deref(), sprint.as_deref(), description.as_deref()).await
         }
         TaskCommand::Search { query, project, limit } => {
             handle_search(ctx, query, project.clone(), *limit).await
@@ -233,6 +236,7 @@ async fn handle_update(
     assignee: Option<&str>,
     priority: Option<&str>,
     sprint: Option<&str>,
+    description: Option<&str>,
 ) -> Result<()> {
     let normalized_status = status.map(normalize_status);
     let normalized_priority = match priority {
@@ -246,6 +250,7 @@ async fn handle_update(
     if let Some(a) = assignee { body["assignee_id"] = json!(a); }
     if let Some(p) = &normalized_priority { body["priority"] = json!(p); }
     if let Some(s) = sprint { body["sprint_id"] = json!(s); }
+    if let Some(d) = description { body["description"] = json!(d); }
 
     let resp: MutationResponse = ctx.api.patch(&format!("/v1/tasks/{key}"), &body).await?;
 

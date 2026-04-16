@@ -325,14 +325,14 @@ fn test_json_detail_structure() {
 fn test_json_nested_objects() {
     let data = serde_json::json!({
         "key": "T-1",
-        "assignee": {"id": "u-1", "name": "sven"},
+        "assignee": {"id": "u-1", "name": "bob"},
         "sprint": {"id": "s-1", "name": "Sprint 12"}
     });
 
     let json_str = tokanban::format::json::render_json(&data, true).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
     assert!(parsed["assignee"].is_object());
-    assert_eq!(parsed["assignee"]["name"], "sven");
+    assert_eq!(parsed["assignee"]["name"], "bob");
     assert!(parsed["sprint"].is_object());
 }
 

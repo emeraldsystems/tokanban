@@ -117,7 +117,7 @@ Auth:    Authorization: Bearer <your-api-key>
 Method:  POST (JSON-RPC 2.0)
 ```
 
-The server exposes 29 tools for task management, project admin, sprints, and visualizations. Discover them via the `tools/list` method.
+The server exposes task management, agent memory, project admin, sprint, and visualization tools. Discover them via the `tools/list` method.
 
 ### Getting an API key
 
@@ -133,7 +133,45 @@ For agent-specific keys with scoped permissions:
 tokanban agent create "My Claude" --type claude-code --scopes "tasks:read,tasks:write,projects:read"
 ```
 
-## Step 4: Verify Setup
+## Step 4: Enable Agent Memory
+
+If the user wants cross-session context, enable Tokanban memory at the same time as MCP setup.
+
+### Required scopes
+
+Agent keys need memory scopes in addition to task scopes:
+
+```bash
+tokanban agent create "My Claude" --type claude-code --scopes "tasks:read,tasks:write,projects:read,memory:read,memory:write"
+```
+
+If the user already has an older agent key, guide them to rotate or recreate it so the key includes `memory:read` and `memory:write`.
+
+### Behavioral block
+
+Add the appropriate memory block template to the harness config:
+
+- Claude Code: `cli/templates/CLAUDE.md.memory-block.md`
+- Codex CLI: `cli/templates/AGENTS.md.memory-block.md`
+- Cursor: `cli/templates/cursorrules.memory-block.md`
+
+These blocks teach the harness to call:
+
+1. `session_start`
+2. `memory_relevant_now`
+3. `memory_create_fact` and `memory_create_decision` during work
+4. `session_end` with a continuation prompt at the end
+
+### Verification
+
+Ask the user to start a short session and verify the harness can:
+
+1. call `session_start`
+2. call `memory_relevant_now`
+3. write a fact
+4. close the session with `session_end`
+
+## Step 5: Verify Setup
 
 ### CLI verification
 
@@ -155,7 +193,7 @@ or
 
 The agent uses the MCP tools automatically.
 
-## Step 5: Initial Configuration
+## Step 6: Initial Configuration
 
 Help the user set defaults so they can omit `--project` and `--workspace` flags:
 

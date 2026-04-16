@@ -72,7 +72,7 @@ pub fn mutation_rotated(resource: &str, key: &str, valid_until: Option<&str>, co
     }
 }
 
-/// Compact card format: `✓ PLAT-42  Fix auth token refresh logic  →  In Progress  @sven`
+/// Compact card format: `✓ PLAT-42  Fix auth token refresh logic  →  In Progress  @bob`
 pub fn compact_card(key: &str, title: &str, status: Option<&str>, assignee: Option<&str>, color: &ColorConfig) -> String {
     let check = color.paint("✓", colors::SUCCESS);
     let mut parts = vec![format!("{check} {key}"), title.to_string()];

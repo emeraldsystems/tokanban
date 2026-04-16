@@ -90,7 +90,7 @@ fn test_task_create_parses() {
         "test", "create", "Fix the bug",
         "--project", "PLAT",
         "--priority", "high",
-        "--assignee", "sven",
+        "--assignee", "bob",
     ])
     .unwrap();
 
@@ -105,7 +105,7 @@ fn test_task_create_parses() {
             assert_eq!(title, "Fix the bug");
             assert_eq!(project, Some("PLAT".to_string()));
             assert_eq!(priority, Some("high".to_string()));
-            assert_eq!(assignee, Some("sven".to_string()));
+            assert_eq!(assignee, Some("bob".to_string()));
         }
         _ => panic!("expected TaskCommand::Create"),
     }
@@ -361,6 +361,42 @@ fn test_member_invite_parses() {
 }
 
 // ============================================================================
+// AGENT COMMAND PARSING
+// ============================================================================
+
+#[test]
+fn test_agent_create_parses_memory_scopes() {
+    #[derive(Debug, Parser)]
+    struct TestCli {
+        #[command(subcommand)]
+        cmd: commands::agent::AgentCommand,
+    }
+
+    let cli = TestCli::try_parse_from([
+        "test",
+        "create",
+        "Memory Claude",
+        "--type",
+        "claude-code",
+        "--scopes",
+        "tasks:read,tasks:write,projects:read,memory:read,memory:write",
+    ])
+    .unwrap();
+
+    match cli.cmd {
+        commands::agent::AgentCommand::Create { name, r#type, scopes, .. } => {
+            assert_eq!(name, "Memory Claude");
+            assert_eq!(r#type, "claude-code");
+            assert_eq!(
+                scopes,
+                "tasks:read,tasks:write,projects:read,memory:read,memory:write"
+            );
+        }
+        _ => panic!("expected AgentCommand::Create"),
+    }
+}
+
+// ============================================================================
 // REQUIRED ARGUMENTS TESTS
 // ============================================================================
 
@@ -417,7 +453,7 @@ fn test_binary_version_flag() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("tokanban"));
-    assert!(stdout.contains("0.1.2"));
+    assert!(stdout.contains("0.2.0"));
 }
 
 #[test]

@@ -197,6 +197,11 @@ tokanban agent create "My Claude" \
   --type claude-code \
   --scopes "tasks:read,tasks:write,projects:read"
 
+# Add memory scopes when the agent should use Tokanban memory
+tokanban agent create "My Claude Memory" \
+  --type claude-code \
+  --scopes "tasks:read,tasks:write,projects:read,memory:read,memory:write"
+
 # List agents
 tokanban agent list
 
@@ -212,6 +217,8 @@ tokanban agent rotate <agent-id>
 # Revoke permanently
 tokanban agent revoke <agent-id>
 ```
+
+For `session_start`, `memory_relevant_now`, and `session_end` behavior, use the `tokanban-memory` skill in addition to the scoped agent key.
 
 ## Workflows
 
@@ -346,7 +353,7 @@ tokanban viz burndown --sprint <sprint-id> --output sprint-1-report.html
 
 ```bash
 tokanban member invite new-hire@company.com --role member
-tokanban agent create "New Hire's Claude" --type claude-code --scopes "tasks:read,tasks:write"
+tokanban agent create "New Hire's Claude" --type claude-code --scopes "tasks:read,tasks:write,projects:read,memory:read,memory:write"
 ```
 
 For full setup and MCP configuration instructions, see the `tokanban:setup` skill.

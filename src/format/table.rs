@@ -211,7 +211,7 @@ pub fn render_task_list(tasks: &[TaskRow], color: &ColorConfig) -> String {
 
 /// Render a one-line task summary (used in search results, sprint boards).
 ///
-/// Format: `PLAT-42  In Progress  Fix auth token refresh logic  @sven  P:High  Sprint 12`
+/// Format: `PLAT-42  In Progress  Fix auth token refresh logic  @bob  P:High  Sprint 12`
 pub fn render_task_summary(task: &TaskRow, color: &ColorConfig) -> String {
     use super::{color_priority, color_status};
 

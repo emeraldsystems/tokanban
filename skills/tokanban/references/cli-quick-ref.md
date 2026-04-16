@@ -49,6 +49,8 @@
 | `tokanban agent rotate <ID>` | Rotate key |
 | `tokanban agent revoke <ID>` | Revoke agent |
 
+Memory-capable agents: add `memory:read,memory:write` to the `--scopes` list and install the harness blocks from `templates/`.
+
 ## Other Commands
 | Command | Description |
 |---------|-------------|

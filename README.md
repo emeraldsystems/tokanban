@@ -1,22 +1,26 @@
 # tokanban
 
-Agent-first task management CLI for development teams using AI coding agents.
+Agent-first task management and cross-session memory CLI for development teams using AI coding agents.
 
 Tokanban eliminates the traditional project management UI. Day-to-day task management happens through your AI agent (Claude Code, Codex, Cursor) via MCP, or through this CLI.
 
 ## Install
 
-```sh
-cargo install tokanban
-```
-
-Or use the install script:
+Install with the script:
 
 ```sh
 curl -fsSL https://app.tokanban.com/install.sh | sh
 ```
 
-The installer currently uses Cargo, so a working Rust toolchain is still required.
+The install script downloads a matching pre-built binary when one is available and falls back to `cargo install` otherwise.
+
+Or build from source with Cargo:
+
+```sh
+cargo install --locked tokanban
+```
+
+Pre-built binaries are available for Linux (x86_64, aarch64), macOS (x86_64, Apple Silicon), and Windows (x86_64) on the [GitHub Releases](https://github.com/emeraldsystems/tokanban/releases) page.
 
 ## Quick start
 
@@ -45,10 +49,26 @@ tokanban task search "auth"
 
 - Full CRUD for tasks, projects, sprints, comments, workflows
 - Agent key management (create, rotate, revoke)
+- Cross-session memory setup for Claude Code, Codex CLI, and Cursor
 - Member and team management
 - Shell completions (bash, zsh, fish)
 - JSON output when piped (`tokanban task list | jq`)
-- Jira and CSV import
+
+## Agent Memory
+
+To enable Tokanban memory for an agent, create a key with memory scopes:
+
+```sh
+tokanban agent create "My Claude" \
+  --type claude-code \
+  --scopes "tasks:read,tasks:write,projects:read,memory:read,memory:write"
+```
+
+Then add the matching memory block from `templates/` to your harness config:
+
+- Claude Code: `templates/CLAUDE.md.memory-block.md`
+- Codex CLI: `templates/AGENTS.md.memory-block.md`
+- Cursor: `templates/cursorrules.memory-block.md`
 
 ## Documentation
 
@@ -58,11 +78,15 @@ tokanban task search "auth"
 
 ## Claude Code Plugin
 
-This repo includes a Claude Code plugin for Tokanban. Install it to get:
+This directory includes a Claude Code marketplace plugin (`.claude-plugin/`, `skills/`, `.mcp.json`). It provides:
 
 - **Setup skill** (`tokanban:setup`) -- guided CLI installation and MCP server configuration
-- **Tokanban skill** (`tokanban:tokanban`) -- full CLI reference with task, project, sprint, workflow, and team management
+- **Memory skill** (`tokanban:memory`) -- session start/end and fact/decision capture guidance
+- **Tokanban skill** (`tokanban:tokanban`) -- full CLI reference for tasks, projects, sprints, workflows, and team management
+- **Hooks and templates** -- memory reminders and harness-ready behavior blocks for Claude Code, Codex CLI, and Cursor
 - **MCP integration** -- auto-configures the Tokanban MCP server (set `TOKANBAN_API_KEY` env var)
+
+> **Note:** The plugin files here are the source of truth. They are synced to the open-source repo at [emeraldsystems/tokanban](https://github.com/emeraldsystems/tokanban) from time to time.
 
 ## License
 

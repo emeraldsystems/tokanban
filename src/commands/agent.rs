@@ -49,7 +49,7 @@ pub enum AgentCommand {
         /// Agent type tag (e.g., "summarizer", "reviewer")
         #[arg(long, rename_all = "verbatim")]
         r#type: String,
-        /// Comma-separated scopes (e.g., "tasks:read,tasks:write")
+        /// Comma-separated scopes (e.g., "tasks:read,tasks:write" or "tasks:read,tasks:write,projects:read,memory:read,memory:write")
         #[arg(long)]
         scopes: String,
         /// Override default workspace
