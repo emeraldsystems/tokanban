@@ -7,7 +7,7 @@ license = "BSD-3-Clause"
 repository = "https://github.com/emeraldsystems/tokanban"
 homepage = "https://tokanban.com"
 readme = "README.md"
-keywords = ["cli", "task-management", "mcp", "agents", "kanban", "memory"]
+keywords = ["cli", "task-management", "mcp", "agents", "memory"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
