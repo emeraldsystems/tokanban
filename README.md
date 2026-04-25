@@ -78,15 +78,26 @@ Then add the matching memory block from `templates/` to your harness config:
 
 ## Claude Code Plugin
 
-This directory includes a Claude Code marketplace plugin (`.claude-plugin/`, `skills/`, `.mcp.json`). It provides:
+This repository is also a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces). Install the Tokanban plugin from inside Claude Code:
+
+```text
+/plugin marketplace add emeraldsystems/tokanban
+/plugin install tokanban@tokanban
+```
+
+Then set your API key so the bundled MCP server can reach the API:
+
+```sh
+export TOKANBAN_API_KEY="$(tokanban agent create 'My Claude' --type claude-code --scopes 'tasks:read,tasks:write,projects:read,memory:read,memory:write' --print-key)"
+```
+
+The plugin lives at `plugins/tokanban/` and provides:
 
 - **Setup skill** (`tokanban:setup`) -- guided CLI installation and MCP server configuration
 - **Memory skill** (`tokanban:memory`) -- session start/end and fact/decision capture guidance
 - **Tokanban skill** (`tokanban:tokanban`) -- full CLI reference for tasks, projects, sprints, workflows, and team management
 - **Hooks and templates** -- memory reminders and harness-ready behavior blocks for Claude Code, Codex CLI, and Cursor
 - **MCP integration** -- auto-configures the Tokanban MCP server (set `TOKANBAN_API_KEY` env var)
-
-> **Note:** The plugin files here are the source of truth. They are synced to the open-source repo at [emeraldsystems/tokanban](https://github.com/emeraldsystems/tokanban) from time to time.
 
 ## License
 

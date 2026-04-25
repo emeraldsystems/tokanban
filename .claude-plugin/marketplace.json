@@ -1,0 +1,21 @@
+{
+  "name": "tokanban",
+  "owner": {
+    "name": "emeraldsystems",
+    "email": "support@tokanban.com"
+  },
+  "metadata": {
+    "description": "Agent-first task management and cross-session memory for AI coding agents.",
+    "version": "0.2.0"
+  },
+  "plugins": [
+    {
+      "name": "tokanban",
+      "source": "./plugins/tokanban",
+      "description": "Tokanban CLI setup, MCP server, agent memory skills, and full CLI reference for Claude Code.",
+      "version": "0.2.0",
+      "category": "productivity",
+      "tags": ["task-management", "memory", "mcp", "cli", "kanban", "agents"]
+    }
+  ]
+}
