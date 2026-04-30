@@ -1,0 +1,87 @@
+<svg width="920" height="520" viewBox="0 0 920 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Tokanban terminal workflow animation</title>
+  <desc id="desc">Animated terminal showing an AI coding agent creating, listing, starting, and closing Tokanban tasks.</desc>
+  <style>
+    .bg { fill: #0f172a; }
+    .bar { fill: #1e293b; }
+    .border { stroke: #334155; stroke-width: 1.5; }
+    .title { fill: #94a3b8; font: 500 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .line { font: 500 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .prompt { fill: #6ee7b7; }
+    .user { fill: #f8fafc; }
+    .agent { fill: #cbd5e1; }
+    .tool { fill: #6ee7b7; }
+    .result { fill: #93c5fd; }
+    .dim { fill: #64748b; }
+    .accent { fill: #10b981; }
+    .red { fill: #ef4444; }
+    .yellow { fill: #f59e0b; }
+    .green { fill: #10b981; }
+    .frame { opacity: 0; }
+    #frame1 { animation: show1 16s infinite; }
+    #frame2 { animation: show2 16s infinite; }
+    #frame3 { animation: show3 16s infinite; }
+    #frame4 { animation: show4 16s infinite; }
+    #cursor { animation: blink 1s steps(2, start) infinite; }
+    @keyframes show1 { 0%, 22% { opacity: 1; } 25%, 100% { opacity: 0; } }
+    @keyframes show2 { 0%, 24% { opacity: 0; } 25%, 47% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    @keyframes show3 { 0%, 49% { opacity: 0; } 50%, 72% { opacity: 1; } 75%, 100% { opacity: 0; } }
+    @keyframes show4 { 0%, 74% { opacity: 0; } 75%, 97% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+
+  <rect x="0" y="0" width="920" height="520" rx="18" fill="#020617"/>
+  <rect x="24" y="24" width="872" height="472" rx="14" class="bg border"/>
+  <rect x="25" y="25" width="870" height="54" rx="14" class="bar"/>
+  <path d="M25 65H895" class="border"/>
+  <circle cx="56" cy="52" r="8" class="red"/>
+  <circle cx="82" cy="52" r="8" class="yellow"/>
+  <circle cx="108" cy="52" r="8" class="green"/>
+  <text x="134" y="58" class="title">tokanban - ~/projects/web-v2</text>
+  <text x="748" y="58" class="title">api.tokanban.com/mcp</text>
+
+  <g id="frame1" class="frame">
+    <text x="54" y="124" class="line prompt">$</text>
+    <text x="80" y="124" class="line user">add a task to fix the auth token refresh bug, high priority</text>
+    <text x="54" y="170" class="line agent">Creating task in web-v2...</text>
+    <text x="54" y="216" class="line tool">$ tokanban task create "Fix auth token refresh" \</text>
+    <text x="78" y="250" class="line tool">--priority high --assignee codex</text>
+    <text x="54" y="306" class="line result">Created PLAT-42 (High) - assigned to codex</text>
+    <text x="54" y="340" class="line result">Status: todo</text>
+    <rect id="cursor" x="54" y="384" width="10" height="24" rx="2" class="accent"/>
+  </g>
+
+  <g id="frame2" class="frame">
+    <text x="54" y="124" class="line prompt">$</text>
+    <text x="80" y="124" class="line user">show me all open tasks for this sprint</text>
+    <text x="54" y="170" class="line agent">Fetching Sprint 12...</text>
+    <text x="54" y="224" class="line dim">ID        Status        Title                      Priority</text>
+    <text x="54" y="258" class="line dim">------------------------------------------------------------</text>
+    <text x="54" y="302" class="line result">PLAT-42   Todo          Fix auth token refresh      High</text>
+    <text x="54" y="336" class="line result">PLAT-41   Todo          Add webhook retry logic     Medium</text>
+    <text x="54" y="370" class="line result">PLAT-40   In Progress   Implement pagination API    High</text>
+    <text x="54" y="424" class="line dim">3 tasks - Sprint 12 - web-v2</text>
+  </g>
+
+  <g id="frame3" class="frame">
+    <text x="54" y="124" class="line prompt">$</text>
+    <text x="80" y="124" class="line user">work on the high priority items first</text>
+    <text x="54" y="170" class="line agent">Found 2 high-priority tasks:</text>
+    <text x="78" y="216" class="line result">PLAT-42  Fix auth token refresh</text>
+    <text x="78" y="250" class="line result">PLAT-40  Implement pagination API</text>
+    <text x="54" y="306" class="line agent">Starting with PLAT-42...</text>
+    <text x="54" y="352" class="line tool">$ tokanban task update PLAT-42 --status in_progress</text>
+    <text x="54" y="408" class="line result">PLAT-42 - In Progress</text>
+  </g>
+
+  <g id="frame4" class="frame">
+    <text x="54" y="124" class="line agent">Working on PLAT-42: Fix auth token refresh</text>
+    <text x="54" y="170" class="line dim">Reading src/auth/refresh.ts...</text>
+    <text x="54" y="216" class="line agent">Found issue: missing retry on 401 response</text>
+    <text x="54" y="250" class="line agent">Applying fix: added exponential backoff</text>
+    <text x="54" y="306" class="line tool">$ tokanban comment add PLAT-42 "Fixed: retry with backoff"</text>
+    <text x="54" y="352" class="line tool">$ tokanban task close PLAT-42 --reason "Fixed"</text>
+    <text x="54" y="408" class="line result">PLAT-42 - Done</text>
+    <text x="54" y="442" class="line agent">Session chronicle and memory are ready for the next agent.</text>
+  </g>
+</svg>
