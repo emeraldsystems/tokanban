@@ -176,27 +176,6 @@ tokanban agent rotate <agent-id>
 tokanban task list --format json | jq '.items[] | {key,title,status}'
 ```
 
-## Architecture
-
-Tokanban runs on Cloudflare's edge stack:
-
-```mermaid
-flowchart LR
-    Agent[AI agents] --> MCP[Remote MCP server]
-    CLI[Tokanban CLI] --> API[Workers API]
-    Scripts[CI and scripts] --> API
-    MCP --> API
-    API --> ProjectDO[Project Durable Object]
-    API --> MemoryDO[Memory Durable Objects]
-    ProjectDO --> D1[(D1 relational state)]
-    MemoryDO --> D1
-    API --> Queues[Queues]
-    Queues --> Webhooks[Signed webhooks]
-    Queues --> Compaction[Memory compaction]
-```
-
-The design goal is boring reliability for non-boring agent workflows: serialized writes, structured errors, retry-safe mutation paths, explicit scopes, and a durable record of what agents did and why.
-
 ## Links
 
 - Website: [tokanban.com](https://tokanban.com)
