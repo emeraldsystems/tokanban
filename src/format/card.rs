@@ -1,4 +1,4 @@
-use super::{ColorConfig, EM_DASH, terminal_width};
+use super::{terminal_width, ColorConfig, EM_DASH};
 
 /// Minimum and maximum card widths.
 const MIN_WIDTH: usize = 50;
@@ -16,7 +16,10 @@ impl CardField {
     }
 
     pub fn required(label: &'static str, value: String) -> Self {
-        CardField { label, value: Some(value) }
+        CardField {
+            label,
+            value: Some(value),
+        }
     }
 }
 

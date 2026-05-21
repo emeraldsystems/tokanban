@@ -1,4 +1,4 @@
-use super::{ColorConfig, EM_DASH, terminal_width, truncate};
+use super::{terminal_width, truncate, ColorConfig, EM_DASH};
 
 /// A single column definition for a table.
 pub struct Column {
@@ -13,7 +13,12 @@ pub struct Column {
 
 impl Column {
     pub fn new(header: &'static str, min_width: usize) -> Self {
-        Column { header, min_width, right_align: false, flexible: false }
+        Column {
+            header,
+            min_width,
+            right_align: false,
+            flexible: false,
+        }
     }
 
     pub fn right(mut self) -> Self {
@@ -75,7 +80,11 @@ pub fn render_table(
     out.push('\n');
 
     // Separator.
-    let sep: String = widths.iter().map(|w| "─".repeat(*w)).collect::<Vec<_>>().join("  ");
+    let sep: String = widths
+        .iter()
+        .map(|w| "─".repeat(*w))
+        .collect::<Vec<_>>()
+        .join("  ");
     out.push_str(&sep);
     out.push('\n');
 
@@ -85,10 +94,7 @@ pub fn render_table(
             .iter()
             .enumerate()
             .map(|(i, col)| {
-                let raw = row
-                    .get(i)
-                    .and_then(|v| v.as_deref())
-                    .unwrap_or(EM_DASH);
+                let raw = row.get(i).and_then(|v| v.as_deref()).unwrap_or(EM_DASH);
                 // Truncate at column width (using visible chars).
                 let truncated_raw = if col.flexible {
                     let raw_vis = visible_width(raw);
@@ -229,5 +235,8 @@ pub fn render_task_summary(task: &TaskRow, color: &ColorConfig) -> String {
         .unwrap_or_else(|| EM_DASH.to_string());
     let sprint = task.sprint.as_deref().unwrap_or(EM_DASH);
 
-    format!("{key}  {status}  {}  {assignee}  {priority}  {sprint}", task.title)
+    format!(
+        "{key}  {status}  {}  {assignee}  {priority}  {sprint}",
+        task.title
+    )
 }

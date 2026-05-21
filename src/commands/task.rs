@@ -1,9 +1,7 @@
 use clap::Subcommand;
 use serde_json::json;
 
-use crate::api::{
-    MutationResponse, PaginatedResponse, TaskDetailResponse, TaskItem,
-};
+use crate::api::{MutationResponse, PaginatedResponse, TaskDetailResponse, TaskItem};
 use crate::ctx::Ctx;
 use crate::error::{CliError, Result};
 use crate::format::{self, TaskDetail, TaskSummary};
@@ -113,19 +111,75 @@ pub enum TaskCommand {
 
 pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
-        TaskCommand::Create { title, project, priority, assignee, sprint, description } => {
-            handle_create(ctx, title, project.clone(), priority.as_deref(), assignee.as_deref(), sprint.as_deref(), description.as_deref()).await
+        TaskCommand::Create {
+            title,
+            project,
+            priority,
+            assignee,
+            sprint,
+            description,
+        } => {
+            handle_create(
+                ctx,
+                title,
+                project.clone(),
+                priority.as_deref(),
+                assignee.as_deref(),
+                sprint.as_deref(),
+                description.as_deref(),
+            )
+            .await
         }
-        TaskCommand::List { project, status, assignee, sprint, priority, due, cursor, limit } => {
-            handle_list(ctx, project.clone(), status.as_deref(), assignee.as_deref(), sprint.as_deref(), priority.as_deref(), due.as_deref(), cursor.as_deref(), *limit).await
+        TaskCommand::List {
+            project,
+            status,
+            assignee,
+            sprint,
+            priority,
+            due,
+            cursor,
+            limit,
+        } => {
+            handle_list(
+                ctx,
+                project.clone(),
+                status.as_deref(),
+                assignee.as_deref(),
+                sprint.as_deref(),
+                priority.as_deref(),
+                due.as_deref(),
+                cursor.as_deref(),
+                *limit,
+            )
+            .await
         }
         TaskCommand::View { key } => handle_view(ctx, key).await,
-        TaskCommand::Update { key, title, status, assignee, priority, sprint, description } => {
-            handle_update(ctx, key, title.as_deref(), status.as_deref(), assignee.as_deref(), priority.as_deref(), sprint.as_deref(), description.as_deref()).await
+        TaskCommand::Update {
+            key,
+            title,
+            status,
+            assignee,
+            priority,
+            sprint,
+            description,
+        } => {
+            handle_update(
+                ctx,
+                key,
+                title.as_deref(),
+                status.as_deref(),
+                assignee.as_deref(),
+                priority.as_deref(),
+                sprint.as_deref(),
+                description.as_deref(),
+            )
+            .await
         }
-        TaskCommand::Search { query, project, limit } => {
-            handle_search(ctx, query, project.clone(), *limit).await
-        }
+        TaskCommand::Search {
+            query,
+            project,
+            limit,
+        } => handle_search(ctx, query, project.clone(), *limit).await,
         TaskCommand::Close { key, reason } => handle_close(ctx, key, reason.as_deref()).await,
         TaskCommand::Reopen { key } => handle_reopen(ctx, key).await,
     }
@@ -143,12 +197,21 @@ async fn handle_create(
     let project_id = ctx.project_id(project).await?;
 
     let mut body = json!({ "title": title });
-    if let Some(p) = priority { body["priority"] = json!(normalize_priority(p)?); }
-    if let Some(a) = assignee { body["assignee_id"] = json!(a); }
-    if let Some(s) = sprint { body["sprint_id"] = json!(s); }
-    if let Some(d) = description { body["description"] = json!(d); }
+    if let Some(p) = priority {
+        body["priority"] = json!(normalize_priority(p)?);
+    }
+    if let Some(a) = assignee {
+        body["assignee_id"] = json!(a);
+    }
+    if let Some(s) = sprint {
+        body["sprint_id"] = json!(s);
+    }
+    if let Some(d) = description {
+        body["description"] = json!(d);
+    }
 
-    let resp: MutationResponse = ctx.api
+    let resp: MutationResponse = ctx
+        .api
         .post(&format!("/v1/projects/{project_id}/tasks"), &body)
         .await?;
 
@@ -180,14 +243,22 @@ async fn handle_list(
         let normalized = normalize_status(s);
         url.push_str(&format!("&status={}", enc(&normalized)));
     }
-    if let Some(a) = assignee { url.push_str(&format!("&assignee={}", enc(a))); }
-    if let Some(s) = sprint { url.push_str(&format!("&sprint_id={}", enc(s))); }
+    if let Some(a) = assignee {
+        url.push_str(&format!("&assignee={}", enc(a)));
+    }
+    if let Some(s) = sprint {
+        url.push_str(&format!("&sprint_id={}", enc(s)));
+    }
     if let Some(p) = priority {
         let normalized = normalize_priority(p)?;
         url.push_str(&format!("&priority={}", enc(&normalized)));
     }
-    if let Some(d) = due { url.push_str(&format!("&due={}", enc(d))); }
-    if let Some(c) = cursor { url.push_str(&format!("&cursor={}", enc(c))); }
+    if let Some(d) = due {
+        url.push_str(&format!("&due={}", enc(d)));
+    }
+    if let Some(c) = cursor {
+        url.push_str(&format!("&cursor={}", enc(c)));
+    }
 
     let resp: PaginatedResponse<TaskItem> = ctx.api.get(&url).await?;
 
@@ -245,12 +316,24 @@ async fn handle_update(
     };
 
     let mut body = json!({});
-    if let Some(t) = title { body["title"] = json!(t); }
-    if let Some(s) = &normalized_status { body["status"] = json!(s); }
-    if let Some(a) = assignee { body["assignee_id"] = json!(a); }
-    if let Some(p) = &normalized_priority { body["priority"] = json!(p); }
-    if let Some(s) = sprint { body["sprint_id"] = json!(s); }
-    if let Some(d) = description { body["description"] = json!(d); }
+    if let Some(t) = title {
+        body["title"] = json!(t);
+    }
+    if let Some(s) = &normalized_status {
+        body["status"] = json!(s);
+    }
+    if let Some(a) = assignee {
+        body["assignee_id"] = json!(a);
+    }
+    if let Some(p) = &normalized_priority {
+        body["priority"] = json!(p);
+    }
+    if let Some(s) = sprint {
+        body["sprint_id"] = json!(s);
+    }
+    if let Some(d) = description {
+        body["description"] = json!(d);
+    }
 
     let resp: MutationResponse = ctx.api.patch(&format!("/v1/tasks/{key}"), &body).await?;
 
@@ -259,8 +342,12 @@ async fn handle_update(
     } else {
         // Build change list for the confirmation message.
         let mut changes: Vec<(&str, &str, &str)> = Vec::new();
-        if let Some(s) = normalized_status.as_deref() { changes.push(("status", "—", s)); }
-        if let Some(p) = normalized_priority.as_deref() { changes.push(("priority", "—", p)); }
+        if let Some(s) = normalized_status.as_deref() {
+            changes.push(("status", "—", s));
+        }
+        if let Some(p) = normalized_priority.as_deref() {
+            changes.push(("priority", "—", p));
+        }
         let msg = crate::format::inline::mutation_updated("task", key, &changes, &ctx.color);
         format::print_inline(&msg);
     }
@@ -292,7 +379,9 @@ async fn handle_search(ctx: &Ctx, query: &str, project: Option<String>, limit: u
 
 async fn handle_close(ctx: &Ctx, key: &str, reason: Option<&str>) -> Result<()> {
     let mut body = json!({ "status": "done" });
-    if let Some(r) = reason { body["close_reason"] = json!(r); }
+    if let Some(r) = reason {
+        body["close_reason"] = json!(r);
+    }
 
     let resp: MutationResponse = ctx.api.patch(&format!("/v1/tasks/{key}"), &body).await?;
 
@@ -351,17 +440,25 @@ fn task_detail_to_display(t: &TaskDetailResponse) -> TaskDetail {
         updated_at: t.updated_at.clone(),
         description: t.description.clone(),
         comments_count: t.comments_count,
-        comments_preview: t.comments.iter()
+        comments_preview: t
+            .comments
+            .iter()
             .take(3)
             .map(|c| (c.author.name.clone(), c.body.clone()))
             .collect(),
-        blocked_by: t.blocked_by.iter()
+        blocked_by: t
+            .blocked_by
+            .iter()
             .map(|r| (r.key.clone(), r.title.clone()))
             .collect(),
-        blocks: t.blocks.iter()
+        blocks: t
+            .blocks
+            .iter()
             .map(|r| (r.key.clone(), r.title.clone()))
             .collect(),
-        activity: t.activity.iter()
+        activity: t
+            .activity
+            .iter()
             .take(3)
             .map(|a| (a.timestamp.clone(), a.actor.clone(), a.description.clone()))
             .collect(),
@@ -373,7 +470,10 @@ fn enc(s: &str) -> String {
 }
 
 fn normalize_priority(priority: &str) -> Result<String> {
-    let normalized = priority.trim().to_ascii_lowercase().replace([' ', '-'], "_");
+    let normalized = priority
+        .trim()
+        .to_ascii_lowercase()
+        .replace([' ', '-'], "_");
     let canonical = match normalized.as_str() {
         "urgent" | "critical" | "p0" => "urgent",
         "high" | "p1" => "high",

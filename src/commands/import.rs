@@ -47,7 +47,12 @@ pub async fn handle(cmd: &ImportCommand, ctx: &Ctx) -> Result<()> {
     }
 }
 
-async fn handle_import(ctx: &Ctx, file: &str, format_type: &str, project: Option<String>) -> Result<()> {
+async fn handle_import(
+    ctx: &Ctx,
+    file: &str,
+    format_type: &str,
+    project: Option<String>,
+) -> Result<()> {
     let project_id = ctx.project_id(project).await?;
 
     // Read file bytes for multipart upload.
@@ -72,7 +77,8 @@ async fn handle_import(ctx: &Ctx, file: &str, format_type: &str, project: Option
         .text("project_id", project_id)
         .part("file", part);
 
-    let resp: ImportResponse = ctx.api
+    let resp: ImportResponse = ctx
+        .api
         .post_multipart(&format!("/v1/import/{format_type}"), form)
         .await?;
 

@@ -1,5 +1,4 @@
 /// Tests for config file handling
-
 mod common;
 
 use common::{setup_temp_config, ConfigBuilder};
@@ -22,7 +21,10 @@ fn test_config_read_valid_file() {
     fs::set_permissions(&config_path, perms).unwrap();
 
     let config = tokanban::config::load_config(Some(&config_path)).unwrap();
-    assert_eq!(config.defaults.workspace, Some("test-workspace".to_string()));
+    assert_eq!(
+        config.defaults.workspace,
+        Some("test-workspace".to_string())
+    );
     assert_eq!(config.defaults.project, Some("TEST".to_string()));
 }
 
@@ -130,15 +132,16 @@ fn test_config_workspace_default() {
     let temp_dir = setup_temp_config();
     let config_path = temp_dir.path().join("config.toml");
 
-    let config_content = ConfigBuilder::new()
-        .workspace("prod-workspace")
-        .build();
+    let config_content = ConfigBuilder::new().workspace("prod-workspace").build();
     fs::write(&config_path, config_content).unwrap();
     let perms = fs::Permissions::from_mode(0o600);
     fs::set_permissions(&config_path, perms).unwrap();
 
     let config = tokanban::config::load_config(Some(&config_path)).unwrap();
-    assert_eq!(config.defaults.workspace, Some("prod-workspace".to_string()));
+    assert_eq!(
+        config.defaults.workspace,
+        Some("prod-workspace".to_string())
+    );
 }
 
 #[test]
@@ -146,9 +149,7 @@ fn test_config_project_default() {
     let temp_dir = setup_temp_config();
     let config_path = temp_dir.path().join("config.toml");
 
-    let config_content = ConfigBuilder::new()
-        .project("BACKEND")
-        .build();
+    let config_content = ConfigBuilder::new().project("BACKEND").build();
     fs::write(&config_path, config_content).unwrap();
     let perms = fs::Permissions::from_mode(0o600);
     fs::set_permissions(&config_path, perms).unwrap();

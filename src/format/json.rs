@@ -2,7 +2,6 @@
 ///
 /// When stdout is not a TTY or `--format json` is passed, we output raw JSON.
 /// For non-TTY piped output we skip pretty-printing (compact JSON per §8.1).
-
 use serde::Serialize;
 
 /// Print a value as JSON. Uses compact format for non-TTY, pretty for TTY.

@@ -1,8 +1,7 @@
 /// Tests for output formatting (tables, cards, JSON, colors, TTY detection)
-
 mod common;
 
-use tokanban::format::{OutputFormat, ColorConfig};
+use tokanban::format::{ColorConfig, OutputFormat};
 
 // ============================================================================
 // OUTPUT FORMAT DETECTION TESTS
@@ -156,7 +155,8 @@ fn test_table_box_drawing_chars() {
 
 #[test]
 fn test_table_truncation_with_ellipsis() {
-    let result = tokanban::format::truncate("this is a very long string that should be truncated", 15);
+    let result =
+        tokanban::format::truncate("this is a very long string that should be truncated", 15);
     assert!(result.ends_with("\u{2026}") || result.ends_with("...")); // "…" or "..."
     assert!(result.chars().count() <= 15);
 }
@@ -181,21 +181,15 @@ fn test_table_numeric_right_alignment() {
 
 #[test]
 fn test_card_render_basic() {
-    use tokanban::format::card::{CardSection, CardField};
+    use tokanban::format::card::{CardField, CardSection};
 
     let color = ColorConfig::new(true);
-    let sections = vec![
-        CardSection::Fields(vec![
-            CardField::required("Status", "In Progress".to_string()),
-        ]),
-    ];
+    let sections = vec![CardSection::Fields(vec![CardField::required(
+        "Status",
+        "In Progress".to_string(),
+    )])];
 
-    let output = tokanban::format::card::render_card(
-        "TEST-1",
-        "Test Title",
-        &sections,
-        &color,
-    );
+    let output = tokanban::format::card::render_card("TEST-1", "Test Title", &sections, &color);
 
     assert!(output.contains("TEST-1"));
     assert!(output.contains("Test Title"));
@@ -204,29 +198,27 @@ fn test_card_render_basic() {
 
 #[test]
 fn test_card_header_format() {
-    use tokanban::format::card::{CardSection, CardField};
+    use tokanban::format::card::{CardField, CardSection};
 
     let color = ColorConfig::new(true);
-    let sections = vec![
-        CardSection::Fields(vec![
-            CardField::required("Status", "Todo".to_string()),
-        ]),
-    ];
+    let sections = vec![CardSection::Fields(vec![CardField::required(
+        "Status",
+        "Todo".to_string(),
+    )])];
 
-    let output = tokanban::format::card::render_card("TEST-42", "Fix auth token refresh", &sections, &color);
+    let output =
+        tokanban::format::card::render_card("TEST-42", "Fix auth token refresh", &sections, &color);
     assert!(output.contains("TEST-42"));
     assert!(output.contains("Fix auth token refresh"));
 }
 
 #[test]
 fn test_card_sections() {
-    use tokanban::format::card::{CardSection, CardField};
+    use tokanban::format::card::{CardField, CardSection};
 
     let color = ColorConfig::new(true);
     let sections = vec![
-        CardSection::Fields(vec![
-            CardField::required("Status", "Open".to_string()),
-        ]),
+        CardSection::Fields(vec![CardField::required("Status", "Open".to_string())]),
         CardSection::Prose {
             heading: "Description".to_string(),
             body: "A test description.".to_string(),
@@ -245,14 +237,13 @@ fn test_card_sections() {
 
 #[test]
 fn test_card_box_drawing() {
-    use tokanban::format::card::{CardSection, CardField};
+    use tokanban::format::card::{CardField, CardSection};
 
     let color = ColorConfig::new(true);
-    let sections = vec![
-        CardSection::Fields(vec![
-            CardField::required("Status", "Open".to_string()),
-        ]),
-    ];
+    let sections = vec![CardSection::Fields(vec![CardField::required(
+        "Status",
+        "Open".to_string(),
+    )])];
     let output = tokanban::format::card::render_card("T-1", "Test", &sections, &color);
 
     assert!(output.contains("\u{250C}")); // ┌
@@ -265,12 +256,10 @@ fn test_card_comment_rendering() {
     use tokanban::format::card::CardSection;
 
     let color = ColorConfig::new(true);
-    let sections = vec![
-        CardSection::List {
-            heading: "Comments".to_string(),
-            items: vec!["@alice: Let me check".to_string()],
-        },
-    ];
+    let sections = vec![CardSection::List {
+        heading: "Comments".to_string(),
+        items: vec!["@alice: Let me check".to_string()],
+    }];
     let output = tokanban::format::card::render_card("T-1", "Test", &sections, &color);
     assert!(output.contains("@alice"));
     assert!(output.contains("Let me check"));

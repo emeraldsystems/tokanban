@@ -97,9 +97,8 @@ impl ColorConfig {
     /// - `NO_COLOR` env var is set (any value), OR
     /// - stdout is not a TTY.
     pub fn new(no_color_flag: bool) -> Self {
-        let enabled = !no_color_flag
-            && std::env::var("NO_COLOR").is_err()
-            && std::io::stdout().is_terminal();
+        let enabled =
+            !no_color_flag && std::env::var("NO_COLOR").is_err() && std::io::stdout().is_terminal();
         ColorConfig { enabled }
     }
 
@@ -126,13 +125,13 @@ impl ColorConfig {
 // ---------------------------------------------------------------------------
 
 pub mod colors {
-    pub const URGENT: u8 = 196;  // #EF4444 red
-    pub const HIGH: u8 = 214;    // #F59E0B amber
-    pub const MEDIUM: u8 = 35;   // #10B981 green
-    pub const LOW: u8 = 247;     // #94A3B8 gray
-    pub const MUTED: u8 = 247;   // #94A3B8 — IDs, timestamps
-    pub const ERROR: u8 = 196;   // red
-    pub const SUCCESS: u8 = 35;  // green
+    pub const URGENT: u8 = 196; // #EF4444 red
+    pub const HIGH: u8 = 214; // #F59E0B amber
+    pub const MEDIUM: u8 = 35; // #10B981 green
+    pub const LOW: u8 = 247; // #94A3B8 gray
+    pub const MUTED: u8 = 247; // #94A3B8 — IDs, timestamps
+    pub const ERROR: u8 = 196; // red
+    pub const SUCCESS: u8 = 35; // green
 }
 
 // ---------------------------------------------------------------------------
@@ -237,9 +236,9 @@ pub struct TaskDetail {
     pub description: Option<String>,
     pub comments_count: u32,
     pub comments_preview: Vec<(String, String)>, // (author, body)
-    pub blocked_by: Vec<(String, String)>,         // (key, title)
-    pub blocks: Vec<(String, String)>,             // (key, title)
-    pub activity: Vec<(String, String, String)>,   // (timestamp, actor, description)
+    pub blocked_by: Vec<(String, String)>,       // (key, title)
+    pub blocks: Vec<(String, String)>,           // (key, title)
+    pub activity: Vec<(String, String, String)>, // (timestamp, actor, description)
 }
 
 // ---------------------------------------------------------------------------
@@ -313,10 +312,7 @@ pub fn print_task_card<T: serde::Serialize>(
                     ),
                 ),
                 card::CardField::new("Type", task.task_type.clone()),
-                card::CardField::new(
-                    "Assignee",
-                    task.assignee.as_ref().map(|a| format!("@{a}")),
-                ),
+                card::CardField::new("Assignee", task.assignee.as_ref().map(|a| format!("@{a}"))),
                 card::CardField::new("Sprint", task.sprint.clone()),
                 card::CardField::new("Due", task.due_date.clone()),
                 card::CardField::new("Labels", task.labels.clone()),
@@ -369,8 +365,7 @@ pub fn print_task_card<T: serde::Serialize>(
                     .comments_preview
                     .iter()
                     .map(|(author, body)| {
-                        let truncated =
-                            truncate(body, terminal_width().saturating_sub(12));
+                        let truncated = truncate(body, terminal_width().saturating_sub(12));
                         format!("@{author}: {truncated}")
                     })
                     .collect();
@@ -380,7 +375,10 @@ pub fn print_task_card<T: serde::Serialize>(
                 });
             }
 
-            print!("{}", card::render_card(&task.key, &task.title, &sections, color));
+            print!(
+                "{}",
+                card::render_card(&task.key, &task.title, &sections, color)
+            );
         }
     }
 }

@@ -1,7 +1,6 @@
 /// Top-level CLI struct and command enum
 ///
 /// Moved to lib.rs so it's accessible from both main.rs and commands::completion
-
 use clap::{Parser, Subcommand};
 
 use crate::commands;
@@ -86,6 +85,10 @@ pub enum Command {
     #[command(subcommand)]
     Task(commands::task::TaskCommand),
 
+    /// Project decisions, findings, and requirements
+    #[command(subcommand, alias = "entities")]
+    Entity(commands::entity::EntityCommand),
+
     /// Sprint management
     #[command(subcommand)]
     Sprint(commands::sprint::SprintCommand),
@@ -113,6 +116,10 @@ pub enum Command {
     /// Visualization commands
     #[command(subcommand)]
     Viz(commands::viz::VizCommand),
+
+    /// Local memory scoring helpers
+    #[command(subcommand)]
+    Memory(commands::memory::MemoryCommand),
 
     /// Generate shell completion scripts
     Completion {

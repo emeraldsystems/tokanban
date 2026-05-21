@@ -52,14 +52,12 @@ impl CliError {
         match self {
             CliError::NotAuthenticated | CliError::TokenRefreshFailed => 2,
             CliError::InsecureConfig { .. } | CliError::Config(_) => 5,
-            CliError::Api { code, .. } => {
-                match code.as_str() {
-                    "auth.forbidden" | "403" => 3,
-                    "api.rate_limit" | "429" => 4,
-                    "auth.unauthenticated" | "401" => 2,
-                    _ => 1,
-                }
-            }
+            CliError::Api { code, .. } => match code.as_str() {
+                "auth.forbidden" | "403" => 3,
+                "api.rate_limit" | "429" => 4,
+                "auth.unauthenticated" | "401" => 2,
+                _ => 1,
+            },
             CliError::MissingRequired(_, _) | CliError::InvalidInput(_) => 1,
             _ => 1,
         }

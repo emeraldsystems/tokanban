@@ -1,5 +1,4 @@
 /// Tests for command parsing with clap
-
 mod common;
 
 use clap::Parser;
@@ -51,6 +50,234 @@ fn test_auth_status_parses() {
 }
 
 // ============================================================================
+// MEMORY COMMAND PARSING
+// ============================================================================
+
+#[test]
+fn test_memory_score_parses_with_inline_json() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "score",
+        "--input",
+        "{\"kind\":\"fact\",\"content\":\"Verified deploy rule.\"}",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Score {
+            input,
+            input_file,
+        }) => {
+            assert_eq!(
+                input,
+                Some("{\"kind\":\"fact\",\"content\":\"Verified deploy rule.\"}".to_string())
+            );
+            assert!(input_file.is_none());
+        }
+        other => panic!("expected Command::Memory::Score, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_score_parses_with_input_file() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "score",
+        "--input-file",
+        "candidate.json",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Score {
+            input,
+            input_file,
+        }) => {
+            assert!(input.is_none());
+            assert_eq!(input_file.unwrap().to_string_lossy(), "candidate.json");
+        }
+        other => panic!("expected Command::Memory::Score, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_candidate_add_parses_with_scope() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "candidate",
+        "add",
+        "--input",
+        "{\"kind\":\"decision\",\"content\":\"Still under review.\"}",
+        "--project-id",
+        "proj-123",
+        "--working-directory",
+        "/tmp/work",
+        "--task-id",
+        "TKB-74",
+        "--module",
+        "memory-gate",
+        "--note",
+        "hold until session end",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Candidate(
+            commands::memory::CandidateCommand::Add {
+                input,
+                input_file,
+                project_id,
+                working_directory,
+                task_id,
+                module,
+                note,
+            },
+        )) => {
+            assert_eq!(
+                input,
+                Some("{\"kind\":\"decision\",\"content\":\"Still under review.\"}".to_string())
+            );
+            assert!(input_file.is_none());
+            assert_eq!(project_id.as_deref(), Some("proj-123"));
+            assert_eq!(working_directory.as_deref(), Some("/tmp/work"));
+            assert_eq!(task_id.as_deref(), Some("TKB-74"));
+            assert_eq!(module.as_deref(), Some("memory-gate"));
+            assert_eq!(note.as_deref(), Some("hold until session end"));
+        }
+        other => panic!("expected Command::Memory::Candidate::Add, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_candidate_list_parses_with_filters() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "candidate",
+        "list",
+        "--project-id",
+        "proj-123",
+        "--module",
+        "memory-gate",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Candidate(
+            commands::memory::CandidateCommand::List {
+                project_id,
+                working_directory,
+                task_id,
+                module,
+            },
+        )) => {
+            assert_eq!(project_id.as_deref(), Some("proj-123"));
+            assert!(working_directory.is_none());
+            assert!(task_id.is_none());
+            assert_eq!(module.as_deref(), Some("memory-gate"));
+        }
+        other => panic!("expected Command::Memory::Candidate::List, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_candidate_clear_parses_with_all() {
+    let cli = Cli::try_parse_from(["tokanban", "memory", "candidate", "clear", "--all"]).unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Candidate(
+            commands::memory::CandidateCommand::Clear {
+                all,
+                ids,
+                project_id,
+                working_directory,
+                task_id,
+                module,
+            },
+        )) => {
+            assert!(all);
+            assert!(ids.is_empty());
+            assert!(project_id.is_none());
+            assert!(working_directory.is_none());
+            assert!(task_id.is_none());
+            assert!(module.is_none());
+        }
+        other => panic!("expected Command::Memory::Candidate::Clear, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_candidate_review_parses_with_filters() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "candidate",
+        "review",
+        "--project-id",
+        "proj-123",
+        "--working-directory",
+        "/tmp/work",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Candidate(
+            commands::memory::CandidateCommand::Review {
+                project_id,
+                working_directory,
+                task_id,
+                module,
+            },
+        )) => {
+            assert_eq!(project_id.as_deref(), Some("proj-123"));
+            assert_eq!(working_directory.as_deref(), Some("/tmp/work"));
+            assert!(task_id.is_none());
+            assert!(module.is_none());
+        }
+        other => panic!("expected Command::Memory::Candidate::Review, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_memory_candidate_clear_parses_with_ids() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "memory",
+        "candidate",
+        "clear",
+        "--id",
+        "cand_123",
+        "--id",
+        "cand_456",
+    ])
+    .unwrap();
+
+    match cli.command {
+        tokanban::cli::Command::Memory(commands::memory::MemoryCommand::Candidate(
+            commands::memory::CandidateCommand::Clear {
+                all,
+                ids,
+                project_id,
+                working_directory,
+                task_id,
+                module,
+            },
+        )) => {
+            assert!(!all);
+            assert_eq!(ids, vec!["cand_123".to_string(), "cand_456".to_string()]);
+            assert!(project_id.is_none());
+            assert!(working_directory.is_none());
+            assert!(task_id.is_none());
+            assert!(module.is_none());
+        }
+        other => panic!("expected Command::Memory::Candidate::Clear, got {other:?}"),
+    }
+}
+
+// ============================================================================
 // TASK COMMAND PARSING
 // ============================================================================
 
@@ -63,14 +290,19 @@ fn test_task_list_parses() {
     }
 
     let cli = TestCli::try_parse_from([
-        "test", "list",
-        "--project", "TEST",
-        "--status", "In Progress",
+        "test",
+        "list",
+        "--project",
+        "TEST",
+        "--status",
+        "In Progress",
     ])
     .unwrap();
 
     match cli.cmd {
-        commands::task::TaskCommand::List { project, status, .. } => {
+        commands::task::TaskCommand::List {
+            project, status, ..
+        } => {
             assert_eq!(project, Some("TEST".to_string()));
             assert_eq!(status, Some("In Progress".to_string()));
         }
@@ -87,10 +319,15 @@ fn test_task_create_parses() {
     }
 
     let cli = TestCli::try_parse_from([
-        "test", "create", "Fix the bug",
-        "--project", "PLAT",
-        "--priority", "high",
-        "--assignee", "bob",
+        "test",
+        "create",
+        "Fix the bug",
+        "--project",
+        "PLAT",
+        "--priority",
+        "high",
+        "--assignee",
+        "bob",
     ])
     .unwrap();
 
@@ -137,9 +374,13 @@ fn test_task_update_parses() {
     }
 
     let cli = TestCli::try_parse_from([
-        "test", "update", "PLAT-42",
-        "--status", "Done",
-        "--priority", "low",
+        "test",
+        "update",
+        "PLAT-42",
+        "--status",
+        "Done",
+        "--priority",
+        "low",
     ])
     .unwrap();
 
@@ -187,9 +428,13 @@ fn test_task_search_parses() {
     }
 
     let cli = TestCli::try_parse_from([
-        "test", "search", "auth bug",
-        "--project", "PLAT",
-        "--limit", "10",
+        "test",
+        "search",
+        "auth bug",
+        "--project",
+        "PLAT",
+        "--limit",
+        "10",
     ])
     .unwrap();
 
@@ -204,6 +449,134 @@ fn test_task_search_parses() {
             assert_eq!(limit, 10);
         }
         _ => panic!("expected TaskCommand::Search"),
+    }
+}
+
+// ============================================================================
+// ENTITY COMMAND PARSING
+// ============================================================================
+
+#[test]
+fn test_entity_create_parses() {
+    #[derive(Debug, Parser)]
+    struct TestCli {
+        #[command(subcommand)]
+        cmd: commands::entity::EntityCommand,
+    }
+
+    let cli = TestCli::try_parse_from([
+        "test",
+        "create",
+        "DEC",
+        "Use ProjectDO storage",
+        "--project",
+        "TKB",
+        "--content",
+        "Keep project knowledge strongly consistent.",
+        "--memory-ref",
+        "fact_123",
+        "--related",
+        "TKB-82",
+    ])
+    .unwrap();
+
+    match cli.cmd {
+        commands::entity::EntityCommand::Create {
+            kind,
+            title,
+            project,
+            content,
+            memory_refs,
+            related_keys,
+            ..
+        } => {
+            assert_eq!(kind, "DEC");
+            assert_eq!(title, "Use ProjectDO storage");
+            assert_eq!(project, Some("TKB".to_string()));
+            assert_eq!(
+                content.as_deref(),
+                Some("Keep project knowledge strongly consistent.")
+            );
+            assert_eq!(memory_refs, vec!["fact_123".to_string()]);
+            assert_eq!(related_keys, vec!["TKB-82".to_string()]);
+        }
+        _ => panic!("expected EntityCommand::Create"),
+    }
+}
+
+#[test]
+fn test_entity_list_parses() {
+    #[derive(Debug, Parser)]
+    struct TestCli {
+        #[command(subcommand)]
+        cmd: commands::entity::EntityCommand,
+    }
+
+    let cli = TestCli::try_parse_from([
+        "test",
+        "list",
+        "--project",
+        "TKB",
+        "--kind",
+        "REQ",
+        "--status",
+        "active",
+        "--query",
+        "oauth",
+        "--limit",
+        "10",
+    ])
+    .unwrap();
+
+    match cli.cmd {
+        commands::entity::EntityCommand::List {
+            project,
+            kind,
+            status,
+            query,
+            limit,
+            ..
+        } => {
+            assert_eq!(project, Some("TKB".to_string()));
+            assert_eq!(kind, Some("REQ".to_string()));
+            assert_eq!(status, Some("active".to_string()));
+            assert_eq!(query, Some("oauth".to_string()));
+            assert_eq!(limit, 10);
+        }
+        _ => panic!("expected EntityCommand::List"),
+    }
+}
+
+#[test]
+fn test_entity_update_parses() {
+    #[derive(Debug, Parser)]
+    struct TestCli {
+        #[command(subcommand)]
+        cmd: commands::entity::EntityCommand,
+    }
+
+    let cli = TestCli::try_parse_from([
+        "test",
+        "update",
+        "TKB-FND-1",
+        "--status",
+        "archived",
+        "--clear-memory-refs",
+    ])
+    .unwrap();
+
+    match cli.cmd {
+        commands::entity::EntityCommand::Update {
+            key,
+            status,
+            clear_memory_refs,
+            ..
+        } => {
+            assert_eq!(key, "TKB-FND-1");
+            assert_eq!(status, Some("archived".to_string()));
+            assert!(clear_memory_refs);
+        }
+        _ => panic!("expected EntityCommand::Update"),
     }
 }
 
@@ -239,11 +612,8 @@ fn test_project_create_requires_name_and_prefix() {
     assert!(result.is_err());
 
     // With both required args should succeed
-    let cli = TestCli::try_parse_from([
-        "test", "create", "My Project",
-        "--key-prefix", "PROJ",
-    ])
-    .unwrap();
+    let cli =
+        TestCli::try_parse_from(["test", "create", "My Project", "--key-prefix", "PROJ"]).unwrap();
     match cli.cmd {
         commands::project::ProjectCommand::Create { name, key_prefix } => {
             assert_eq!(name, "My Project");
@@ -287,11 +657,16 @@ fn test_sprint_create_parses() {
     }
 
     let cli = TestCli::try_parse_from([
-        "test", "create",
-        "--project", "PLAT",
-        "--name", "Sprint 13",
-        "--start", "2026-04-15",
-        "--end", "2026-04-29",
+        "test",
+        "create",
+        "--project",
+        "PLAT",
+        "--name",
+        "Sprint 13",
+        "--start",
+        "2026-04-15",
+        "--end",
+        "2026-04-29",
     ])
     .unwrap();
 
@@ -345,11 +720,8 @@ fn test_member_invite_parses() {
         cmd: commands::member::MemberCommand,
     }
 
-    let cli = TestCli::try_parse_from([
-        "test", "invite", "alice@example.com",
-        "--role", "editor",
-    ])
-    .unwrap();
+    let cli = TestCli::try_parse_from(["test", "invite", "alice@example.com", "--role", "editor"])
+        .unwrap();
 
     match cli.cmd {
         commands::member::MemberCommand::Invite { email, role, .. } => {
@@ -384,7 +756,12 @@ fn test_agent_create_parses_memory_scopes() {
     .unwrap();
 
     match cli.cmd {
-        commands::agent::AgentCommand::Create { name, r#type, scopes, .. } => {
+        commands::agent::AgentCommand::Create {
+            name,
+            r#type,
+            scopes,
+            ..
+        } => {
             assert_eq!(name, "Memory Claude");
             assert_eq!(r#type, "claude-code");
             assert_eq!(
@@ -453,18 +830,22 @@ fn test_binary_version_flag() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("tokanban"));
-    assert!(stdout.contains("0.2.0"));
+    assert!(stdout.contains(env!("CARGO_PKG_VERSION")));
 }
 
 #[test]
 fn test_global_workspace_and_project_overrides_apply_to_config() {
     let cli = Cli::parse_from([
         "tokanban",
-        "--workspace", "ws_123",
-        "--project", "PLAT",
-        "--api-url", "https://api.example.com",
+        "--workspace",
+        "ws_123",
+        "--project",
+        "PLAT",
+        "--api-url",
+        "https://api.example.com",
         "--no-color",
-        "task", "list",
+        "task",
+        "list",
     ]);
 
     let mut config = tokanban::config::AppConfig::default();

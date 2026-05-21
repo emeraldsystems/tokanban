@@ -1,7 +1,7 @@
 use clap::Subcommand;
 
 use crate::auth::run_login_flow;
-use crate::config::{AppConfig, save_config};
+use crate::config::{save_config, AppConfig};
 use crate::error::{CliError, Result};
 
 #[derive(Debug, Subcommand)]
@@ -33,10 +33,7 @@ async fn handle_login(
     run_login_flow(config, config_path).await
 }
 
-fn handle_logout(
-    config: &mut AppConfig,
-    config_path: Option<&std::path::PathBuf>,
-) -> Result<()> {
+fn handle_logout(config: &mut AppConfig, config_path: Option<&std::path::PathBuf>) -> Result<()> {
     config.auth.token = None;
     config.auth.access_token = None;
     config.auth.expires_at = None;
@@ -49,11 +46,7 @@ fn handle_logout(
 fn handle_status(config: &AppConfig) -> Result<()> {
     match &config.auth.access_token {
         Some(_) => {
-            let workspace = config
-                .defaults
-                .workspace
-                .as_deref()
-                .unwrap_or("(not set)");
+            let workspace = config.defaults.workspace.as_deref().unwrap_or("(not set)");
             let project = config.defaults.project.as_deref().unwrap_or("(not set)");
             let expires = config
                 .auth

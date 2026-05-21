@@ -2,7 +2,7 @@ use clap::Parser;
 use tokanban::cli::{Cli, Command};
 use tokanban::ctx::Ctx;
 use tokanban::format::OutputFormat;
-use tokanban::{commands, config, auth, error};
+use tokanban::{auth, commands, config, error};
 
 #[tokio::main]
 async fn main() {
@@ -17,13 +17,7 @@ async fn main() {
 }
 
 async fn run(cli: Cli) -> error::Result<()> {
-    // Load config
-    let mut app_config = config::load_config(cli.config.as_ref())?;
-
-    // Apply CLI overrides
-    cli.apply_overrides(&mut app_config);
-
-    // Determine output format
+    // Determine output format early so local commands can use it without auth.
     let output_format = OutputFormat::detect(cli.format.as_deref(), cli.quiet);
 
     match &cli.command {
@@ -32,11 +26,21 @@ async fn run(cli: Cli) -> error::Result<()> {
 
         // Auth commands get direct config access (no token required)
         Command::Auth(cmd) => {
+            let mut app_config = config::load_config(cli.config.as_ref())?;
+            cli.apply_overrides(&mut app_config);
             return commands::auth::handle(cmd, &mut app_config, cli.config.as_ref()).await;
+        }
+
+        // Local memory scoring does not need config or token.
+        Command::Memory(cmd) => {
+            return commands::memory::handle(cmd).await;
         }
 
         // All other commands require authentication
         cmd => {
+            let mut app_config = config::load_config(cli.config.as_ref())?;
+            cli.apply_overrides(&mut app_config);
+
             // Build the execution context
             let mut ctx = Ctx::new(
                 app_config,
@@ -48,18 +52,17 @@ async fn run(cli: Cli) -> error::Result<()> {
             )?;
 
             // Silently refresh token if needed
-            auth::ensure_valid_token(
-                &mut ctx.config,
-                &mut ctx.api,
-                ctx.config_path.as_ref(),
-            )
-            .await?;
+            auth::ensure_valid_token(&mut ctx.config, &mut ctx.api, ctx.config_path.as_ref())
+                .await?;
 
             match cmd {
-                Command::Auth(_) | Command::Completion { .. } => unreachable!(),
+                Command::Auth(_) | Command::Completion { .. } | Command::Memory(_) => {
+                    unreachable!()
+                }
                 Command::Workspace(cmd) => commands::workspace::handle(cmd, &mut ctx).await,
                 Command::Project(cmd) => commands::project::handle(cmd, &mut ctx).await,
                 Command::Task(cmd) => commands::task::handle(cmd, &ctx).await,
+                Command::Entity(cmd) => commands::entity::handle(cmd, &ctx).await,
                 Command::Sprint(cmd) => commands::sprint::handle(cmd, &ctx).await,
                 Command::Comment(cmd) => commands::comment::handle(cmd, &ctx).await,
                 Command::Member(cmd) => commands::member::handle(cmd, &ctx).await,

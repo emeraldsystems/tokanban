@@ -1,18 +1,17 @@
 /// Integration tests for the Tokanban CLI
 /// These tests verify full workflows with mock API server
-
 mod common;
 
 use common::MockServer;
 use tokanban::api::ApiClient;
-use tokanban::commands::{project, task};
 use tokanban::commands::project::ProjectCommand;
 use tokanban::commands::task::TaskCommand;
+use tokanban::commands::{project, task};
 use tokanban::config::AppConfig;
 use tokanban::ctx::Ctx;
 use tokanban::format::OutputFormat;
-use wiremock::{Mock, ResponseTemplate};
 use wiremock::matchers::{method, path};
+use wiremock::{Mock, ResponseTemplate};
 
 #[tokio::test]
 async fn test_api_client_with_mock_server() {
@@ -43,14 +42,7 @@ async fn test_ctx_creation_with_config() {
     config.defaults.workspace = Some("test-ws".to_string());
     config.defaults.project = Some("TEST".to_string());
 
-    let ctx = Ctx::new(
-        config,
-        None,
-        false,
-        false,
-        OutputFormat::Json,
-        false,
-    );
+    let ctx = Ctx::new(config, None, false, false, OutputFormat::Json, false);
 
     assert!(ctx.is_ok());
     let ctx = ctx.unwrap();
@@ -317,21 +309,11 @@ async fn test_project_list_does_not_require_workspace_default() {
     config.api.url = server.base_url();
     config.auth.access_token = Some("tk_user_test".to_string());
 
-    let mut ctx = Ctx::new(
-        config,
-        None,
-        false,
-        false,
-        OutputFormat::Json,
-        false,
-    )
-    .unwrap();
+    let mut ctx = Ctx::new(config, None, false, false, OutputFormat::Json, false).unwrap();
 
-    let result = tokanban::commands::project::handle(
-        &ProjectCommand::List { workspace: None },
-        &mut ctx,
-    )
-    .await;
+    let result =
+        tokanban::commands::project::handle(&ProjectCommand::List { workspace: None }, &mut ctx)
+            .await;
 
     assert!(result.is_ok());
 }
@@ -422,15 +404,7 @@ async fn test_task_create_resolves_project_reference_before_posting() {
     config.auth.access_token = Some("tk_user_test".to_string());
     config.defaults.project = Some("Workspace".to_string());
 
-    let ctx = Ctx::new(
-        config,
-        None,
-        true,
-        false,
-        OutputFormat::Json,
-        false,
-    )
-    .unwrap();
+    let ctx = Ctx::new(config, None, true, false, OutputFormat::Json, false).unwrap();
 
     task::handle(
         &TaskCommand::Create {

@@ -1,6 +1,6 @@
 ---
 name: tokanban
-description: "Use when the user asks about Tokanban task management, wants to create/update/list tasks, manage projects, run sprints, invite team members, manage agent tokens, update workflows, import from Jira/CSV, or visualize a board. Trigger phrases: 'tokanban', 'create a task', 'list tasks', 'sprint board', 'kanban board', 'project backlog', 'assign task', 'close task', 'import from jira', 'tokanban agent', 'task priority', 'workflow status'."
+description: "Use when the user asks about Tokanban task management, wants to create/update/list tasks, record decisions/findings/requirements, manage projects, run sprints, invite team members, manage agent tokens, update workflows, import from Jira/CSV, or visualize a board. Trigger phrases: 'tokanban', 'create a task', 'list tasks', 'decision record', 'finding', 'requirement', 'sprint board', 'kanban board', 'project backlog', 'assign task', 'close task', 'import from jira', 'tokanban agent', 'task priority', 'workflow status'."
 ---
 
 # Tokanban CLI & MCP Reference
@@ -23,6 +23,19 @@ All commands accept these flags:
 | `--no-color` | Strip ANSI codes |
 | `--config <path>` | Custom config file |
 | `--api-url <url>` | Override API endpoint |
+
+## Presentation guidance
+
+When showing Tokanban results inside an agent response:
+
+- Prefer `--format table` for multi-task lists, backlog checks, and status reviews.
+- Use `--format json` only when you need stable fields for parsing, exact IDs, or follow-up mutations.
+- For a single task, prefer `tokanban task view <KEY>` over a raw list or search dump.
+- For a single task, present the result as a bold title followed by flat metadata bullets rather than a markdown table.
+- For multi-task lists, rewrite the result into a compact markdown table or status-grouped bullet list instead of pasting raw JSON unless the user explicitly asks for raw output.
+- Always leave a blank line before a markdown table so terminal renderers parse it correctly.
+- Use project entities for durable project knowledge: `DEC` for decisions, `FND` for findings, and `REQ` for requirements. Reference them by keys such as `PLAT-DEC-1`.
+- Prefer updating an entity status when the record should remain auditable; delete only when the record is wrong or intentionally removed.
 
 ## Tasks
 
@@ -51,10 +64,11 @@ tokanban task list \
   --priority high \
   --sprint <sprint-id> \
   --due 2026-04-15 \
-  --limit 50
+  --limit 50 \
+  --format table
 ```
 
-All filters are optional. Default limit is 25 (max 100). Use `--cursor` for pagination.
+All filters are optional. Default limit is 25 (max 100). Use `--cursor` for pagination. Prefer `--format table` for user-facing lists and `--format json` only when you need machine-readable fields.
 
 ### View a task
 
@@ -88,6 +102,37 @@ Free-text search across task titles and descriptions.
 ```bash
 tokanban task close PLAT-42 --reason "Completed in PR #123"
 tokanban task reopen PLAT-42
+```
+
+## Project entities: DEC, FND, REQ
+
+Project entities capture durable knowledge that agents can reference alongside tasks:
+
+- `DEC`: core project decisions.
+- `FND`: useful findings, optionally cross-referenced to Tokanban memory IDs/facts.
+- `REQ`: requirements that gate final product success.
+
+Keys follow `PROJECT-{DEC,FND,REQ}-<id>`, for example `PLAT-DEC-1`.
+
+```bash
+# Create durable project knowledge
+tokanban entity create DEC "Use ProjectDO for project knowledge" \
+  --project PLAT \
+  --content "Strong consistency matters for agent-visible decisions."
+
+tokanban entity create FND "OAuth callback failed on the apex host" \
+  --project PLAT \
+  --memory-ref <memory-id>
+
+tokanban entity create REQ "Admins can inspect platform signups" \
+  --project PLAT \
+  --related PLAT-42
+
+# List, view, update, and remove
+tokanban entity list --project PLAT --kind REQ --format table
+tokanban entity view PLAT-DEC-1
+tokanban entity update PLAT-REQ-1 --status satisfied
+tokanban entity delete PLAT-FND-1
 ```
 
 ## Projects

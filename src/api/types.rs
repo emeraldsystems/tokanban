@@ -217,6 +217,36 @@ pub struct ActivityItem {
 }
 
 // ---------------------------------------------------------------------------
+// Project entity API types (DEC/FND/REQ)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectEntityItem {
+    pub id: String,
+    pub key: String,
+    pub project_id: String,
+    pub entity_number: u64,
+    pub kind: String,
+    pub title: String,
+    #[serde(default)]
+    pub content: String,
+    #[serde(default)]
+    pub status: String,
+    #[serde(default)]
+    pub memory_refs: Vec<String>,
+    #[serde(default)]
+    pub related_keys: Vec<String>,
+    #[serde(default)]
+    pub metadata: Value,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+    #[serde(default)]
+    pub etag: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
 // Project API types
 // ---------------------------------------------------------------------------
 

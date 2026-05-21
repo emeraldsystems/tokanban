@@ -5,8 +5,8 @@ use serde_json::json;
 use crate::api::MutationResponse;
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorkflowResponse {
@@ -51,8 +51,20 @@ pub enum WorkflowCommand {
 pub async fn handle(cmd: &WorkflowCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
         WorkflowCommand::Show { project } => handle_show(ctx, project.clone()).await,
-        WorkflowCommand::Update { project, add_status, remove_status, migrate } => {
-            handle_update(ctx, project.clone(), add_status.as_deref(), remove_status.as_deref(), migrate.as_deref()).await
+        WorkflowCommand::Update {
+            project,
+            add_status,
+            remove_status,
+            migrate,
+        } => {
+            handle_update(
+                ctx,
+                project.clone(),
+                add_status.as_deref(),
+                remove_status.as_deref(),
+                migrate.as_deref(),
+            )
+            .await
         }
     }
 }
@@ -70,13 +82,25 @@ async fn handle_show(ctx: &Ctx, project: Option<String>) -> Result<()> {
             Column::new("Terminal", 8),
             Column::new("Allowed transitions", 40),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.statuses
+        let rows: Vec<Vec<Option<String>>> = resp
+            .statuses
             .iter()
-            .map(|s| vec![
-                Some(ctx.color.paint(&s.name, colors::MUTED)),
-                Some(s.is_terminal.map(|t| if t { "Yes" } else { "No" }.to_string()).unwrap_or_else(|| "No".to_string())),
-                Some(s.allowed_transitions.as_ref().map(|v| v.join(", ")).unwrap_or_else(|| "any".to_string())),
-            ])
+            .map(|s| {
+                vec![
+                    Some(ctx.color.paint(&s.name, colors::MUTED)),
+                    Some(
+                        s.is_terminal
+                            .map(|t| if t { "Yes" } else { "No" }.to_string())
+                            .unwrap_or_else(|| "No".to_string()),
+                    ),
+                    Some(
+                        s.allowed_transitions
+                            .as_ref()
+                            .map(|v| v.join(", "))
+                            .unwrap_or_else(|| "any".to_string()),
+                    ),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -93,8 +117,12 @@ async fn handle_update(
     let project = ctx.project(project).await?;
 
     let mut changes = json!({});
-    if let Some(s) = add_status { changes["add_status"] = json!(s); }
-    if let Some(s) = remove_status { changes["remove_status"] = json!(s); }
+    if let Some(s) = add_status {
+        changes["add_status"] = json!(s);
+    }
+    if let Some(s) = remove_status {
+        changes["remove_status"] = json!(s);
+    }
 
     // Parse FROM:TO migration spec.
     let mut body = json!({ "changes": changes });
@@ -105,7 +133,8 @@ async fn handle_update(
         }
     }
 
-    let resp: MutationResponse = ctx.api
+    let resp: MutationResponse = ctx
+        .api
         .patch(&format!("/v1/projects/{}/workflow", project.id), &body)
         .await?;
 

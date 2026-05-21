@@ -5,8 +5,8 @@ use serde_json::json;
 use crate::api::{MutationResponse, PaginatedResponse};
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors, EM_DASH};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors, EM_DASH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CommentItem {
@@ -49,9 +49,7 @@ pub enum CommentCommand {
 
 pub async fn handle(cmd: &CommentCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
-        CommentCommand::Add { task_key, body } => {
-            handle_add(ctx, task_key, body.as_deref()).await
-        }
+        CommentCommand::Add { task_key, body } => handle_add(ctx, task_key, body.as_deref()).await,
         CommentCommand::List { task_key } => handle_list(ctx, task_key).await,
         CommentCommand::Delete { id } => handle_delete(ctx, id).await,
         CommentCommand::Edit { id, body } => handle_edit(ctx, id, body).await,
@@ -70,7 +68,8 @@ async fn handle_add(ctx: &Ctx, task_key: &str, body: Option<&str>) -> Result<()>
     };
 
     let req_body = json!({ "body": body_text });
-    let resp: MutationResponse = ctx.api
+    let resp: MutationResponse = ctx
+        .api
         .post(&format!("/v1/tasks/{task_key}/comments"), &req_body)
         .await?;
 
@@ -100,14 +99,17 @@ async fn handle_list(ctx: &Ctx, task_key: &str) -> Result<()> {
             Column::new("Body", 40).flexible(),
             Column::new("Created", 10),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.items
+        let rows: Vec<Vec<Option<String>>> = resp
+            .items
             .iter()
-            .map(|c| vec![
-                Some(ctx.color.paint(&c.id, colors::MUTED)),
-                Some(format!("@{}", c.author)),
-                Some(c.body.clone()),
-                Some(c.created_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
-            ])
+            .map(|c| {
+                vec![
+                    Some(ctx.color.paint(&c.id, colors::MUTED)),
+                    Some(format!("@{}", c.author)),
+                    Some(c.body.clone()),
+                    Some(c.created_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -128,7 +130,10 @@ async fn handle_delete(ctx: &Ctx, id: &str) -> Result<()> {
 
 async fn handle_edit(ctx: &Ctx, id: &str, body: &str) -> Result<()> {
     let req_body = json!({ "body": body });
-    let resp: MutationResponse = ctx.api.patch(&format!("/v1/comments/{id}"), &req_body).await?;
+    let resp: MutationResponse = ctx
+        .api
+        .patch(&format!("/v1/comments/{id}"), &req_body)
+        .await?;
 
     if ctx.format.is_json() {
         format::print_json(&resp);

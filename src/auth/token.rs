@@ -1,5 +1,5 @@
 use crate::api::ApiClient;
-use crate::config::{AppConfig, save_config};
+use crate::config::{save_config, AppConfig};
 use crate::error::{CliError, Result};
 
 /// Check if the access token is valid and refresh if needed.

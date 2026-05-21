@@ -55,9 +55,11 @@ pub async fn handle(cmd: &VizCommand, ctx: &Ctx) -> Result<()> {
         VizCommand::Kanban { project, output } => {
             handle_kanban(ctx, project.clone(), output.as_deref()).await
         }
-        VizCommand::Burndown { project, sprint, output } => {
-            handle_burndown(ctx, project.clone(), sprint, output.as_deref()).await
-        }
+        VizCommand::Burndown {
+            project,
+            sprint,
+            output,
+        } => handle_burndown(ctx, project.clone(), sprint, output.as_deref()).await,
         VizCommand::Timeline { project, output } => {
             handle_timeline(ctx, project.clone(), output.as_deref()).await
         }
@@ -70,7 +72,12 @@ async fn handle_kanban(ctx: &Ctx, project: Option<String>, output: Option<&str>)
     deliver_viz(ctx, &url, "kanban", output).await
 }
 
-async fn handle_burndown(ctx: &Ctx, project: Option<String>, sprint: &str, output: Option<&str>) -> Result<()> {
+async fn handle_burndown(
+    ctx: &Ctx,
+    project: Option<String>,
+    sprint: &str,
+    output: Option<&str>,
+) -> Result<()> {
     let project_id = ctx.project_id(project).await?;
     let url = format!("/v1/visualizations/burndown?project_id={project_id}&sprint_id={sprint}");
     deliver_viz(ctx, &url, "burndown", output).await
@@ -107,9 +114,8 @@ async fn deliver_viz(ctx: &Ctx, api_url: &str, viz_type: &str, output: Option<&s
             format::print_inline(&format!("{check} {viz_type} opened in browser"));
         }
     } else if let Some(url) = &resp.url {
-        open::that(url).map_err(|e| {
-            crate::error::CliError::Config(format!("Could not open browser: {e}"))
-        })?;
+        open::that(url)
+            .map_err(|e| crate::error::CliError::Config(format!("Could not open browser: {e}")))?;
         let check = ctx.color.paint("✓", colors::SUCCESS);
         format::print_inline(&format!("{check} {viz_type} opened in browser"));
     } else {

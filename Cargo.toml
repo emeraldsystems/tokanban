@@ -1,6 +1,6 @@
 [package]
 name = "tokanban"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Agent-first task management and cross-session memory CLI for development teams using AI coding agents"
 license = "BSD-3-Clause"

@@ -1,5 +1,4 @@
 /// Tests for API client behavior
-
 mod common;
 
 use common::MockServer;
@@ -21,8 +20,9 @@ async fn test_auth_header_injected_get() {
     let response = serde_json::json!({"key": "TEST-1", "title": "Task"});
     server.mock_get("/api/tasks/TEST-1", response).await;
 
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("tk_access_test".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("tk_access_test".to_string()))
+            .unwrap();
     let result: TestResponse = client.get("/api/tasks/TEST-1").await.unwrap();
     assert_eq!(result.key, "TEST-1");
 }
@@ -34,8 +34,9 @@ async fn test_auth_header_injected_post() {
     server.mock_post("/api/tasks", response).await;
 
     let body = serde_json::json!({"title": "New Task"});
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("tk_access_test".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("tk_access_test".to_string()))
+            .unwrap();
     let result: TestResponse = client.post("/api/tasks", &body).await.unwrap();
     assert_eq!(result.title, "New Task");
 }
@@ -60,14 +61,16 @@ async fn test_error_message_extracted() {
     let server = MockServer::start().await;
     server.mock_not_found("/api/projects/NONE", "Project").await;
 
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("token".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("token".to_string())).unwrap();
     let result: Result<TestResponse, _> = client.get("/api/projects/NONE").await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
     let err_str = err.to_string();
-    assert!(err_str.contains("404") || err_str.contains("not found") || err_str.contains("Not Found"));
+    assert!(
+        err_str.contains("404") || err_str.contains("not found") || err_str.contains("Not Found")
+    );
 }
 
 #[tokio::test]
@@ -75,15 +78,20 @@ async fn test_error_hint_extracted() {
     let server = MockServer::start().await;
     server.mock_unauthorized("/api/tasks").await;
 
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("expired_token".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("expired_token".to_string()))
+            .unwrap();
     let result: Result<TestResponse, _> = client.get("/api/tasks").await;
 
     assert!(result.is_err());
     let err = result.unwrap_err();
     let rendered = err.render();
     // Hint should be present for unauthorized errors
-    assert!(rendered.contains("401") || rendered.contains("Unauthorized") || rendered.contains("Invalid"));
+    assert!(
+        rendered.contains("401")
+            || rendered.contains("Unauthorized")
+            || rendered.contains("Invalid")
+    );
 }
 
 #[tokio::test]
@@ -91,11 +99,16 @@ async fn test_error_unknown_type_handled() {
     let server = MockServer::start().await;
     // Return raw error text without structured error format
     server
-        .mock_error("GET", "/api/error", 500, serde_json::json!({"raw": "error"}))
+        .mock_error(
+            "GET",
+            "/api/error",
+            500,
+            serde_json::json!({"raw": "error"}),
+        )
         .await;
 
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("token".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("token".to_string())).unwrap();
     let result: Result<TestResponse, _> = client.get("/api/error").await;
 
     assert!(result.is_err());
@@ -146,8 +159,9 @@ async fn test_401_unauthorized() {
     let server = MockServer::start().await;
     server.mock_unauthorized("/api/tasks").await;
 
-    let client = tokanban::api::ApiClient::new(&server.base_url(), 30, Some("invalid_token".to_string()))
-        .unwrap();
+    let client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("invalid_token".to_string()))
+            .unwrap();
     let result: Result<TestResponse, _> = client.get("/api/tasks").await;
 
     assert!(result.is_err());
@@ -215,7 +229,11 @@ async fn test_exchange_code_for_tokens() {
 
     let client = tokanban::api::ApiClient::new(&server.base_url(), 30, None).unwrap();
     let result = client
-        .exchange_code("auth_code_123", "code_verifier_xyz", "http://localhost:8080/callback")
+        .exchange_code(
+            "auth_code_123",
+            "code_verifier_xyz",
+            "http://localhost:8080/callback",
+        )
         .await
         .unwrap();
 

@@ -1,5 +1,4 @@
 /// Test fixtures and data generators
-
 use serde_json::json;
 use std::collections::HashMap;
 

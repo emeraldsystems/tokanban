@@ -64,6 +64,7 @@ tokanban task view PLAT-42
 # Update from your terminal or let an agent do it through MCP
 tokanban task update PLAT-42 --status in_progress
 tokanban comment add PLAT-42 "Found the refresh retry bug"
+tokanban entity create FND "Refresh retry used stale cache" --memory-ref <memory-id>
 tokanban task close PLAT-42 --reason "Fixed"
 ```
 
@@ -105,7 +106,7 @@ Tokanban also ships as a Claude Code plugin marketplace. From inside Claude Code
 The plugin provides:
 
 - **Setup skill** for CLI installation, auth, and MCP configuration.
-- **Tokanban skill** for task, project, sprint, workflow, member, and agent-key commands.
+- **Tokanban skill** for task, project entity, project, sprint, workflow, member, and agent-key commands.
 - **Memory skill** for session start/end, durable-memory triage, and continuation discipline.
 - **Hooks and templates** for Claude Code, Codex CLI, and Cursor behavior blocks.
 
@@ -163,6 +164,14 @@ tokanban task close PLAT-42 --reason "Merged"
 tokanban comment add PLAT-42 "Root cause: stale refresh token cache"
 tokanban comment list PLAT-42
 
+# Project entities: DEC decisions, FND findings, REQ requirements
+tokanban entity create DEC "Use ProjectDO for project knowledge" --content "Agents need strongly consistent decisions."
+tokanban entity create FND "OAuth callback failed on apex host" --memory-ref <memory-id>
+tokanban entity create REQ "Admins can inspect platform signups" --related PLAT-42
+tokanban entity list --kind REQ --format table
+tokanban entity view PLAT-DEC-1
+tokanban entity update PLAT-REQ-1 --status satisfied
+
 # Sprints
 tokanban sprint list
 tokanban sprint create --name "Sprint 12" --start 2026-04-30 --end 2026-05-14
@@ -175,6 +184,27 @@ tokanban agent rotate <agent-id>
 # Machine-readable output
 tokanban task list --format json | jq '.items[] | {key,title,status}'
 ```
+
+## Architecture
+
+Tokanban runs on Cloudflare's edge stack:
+
+```mermaid
+flowchart LR
+    Agent[AI agents] --> MCP[Remote MCP server]
+    CLI[Tokanban CLI] --> API[Workers API]
+    Scripts[CI and scripts] --> API
+    MCP --> API
+    API --> ProjectDO[Project Durable Object]
+    API --> MemoryDO[Memory Durable Objects]
+    ProjectDO --> D1[(D1 relational state)]
+    MemoryDO --> D1
+    API --> Queues[Queues]
+    Queues --> Webhooks[Signed webhooks]
+    Queues --> Compaction[Memory compaction]
+```
+
+The design goal is boring reliability for non-boring agent workflows: serialized writes, structured errors, retry-safe mutation paths, explicit scopes, and a durable record of what agents did and why.
 
 ## Links
 

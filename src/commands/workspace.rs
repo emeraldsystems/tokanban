@@ -5,9 +5,9 @@ use crate::api::{MutationResponse, PaginatedResponse};
 use crate::config::save_config;
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors};
-use crate::format::card::{CardField, CardSection, render_card};
+use crate::format::card::{render_card, CardField, CardSection};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,14 +78,25 @@ async fn handle_list(ctx: &Ctx) -> Result<()> {
             Column::new("Members", 7).right(),
             Column::new("Created", 10),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.items
+        let rows: Vec<Vec<Option<String>>> = resp
+            .items
             .iter()
-            .map(|w| vec![
-                Some(ctx.color.paint(&w.slug, colors::MUTED)),
-                Some(w.name.clone()),
-                Some(w.member_count.map(|c| c.to_string()).unwrap_or_else(|| format::EM_DASH.to_string())),
-                Some(w.created_at.clone().unwrap_or_else(|| format::EM_DASH.to_string())),
-            ])
+            .map(|w| {
+                vec![
+                    Some(ctx.color.paint(&w.slug, colors::MUTED)),
+                    Some(w.name.clone()),
+                    Some(
+                        w.member_count
+                            .map(|c| c.to_string())
+                            .unwrap_or_else(|| format::EM_DASH.to_string()),
+                    ),
+                    Some(
+                        w.created_at
+                            .clone()
+                            .unwrap_or_else(|| format::EM_DASH.to_string()),
+                    ),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -114,7 +125,15 @@ async fn handle_current(ctx: &Ctx) -> Result<()> {
             CardField::new("Members", resp.member_count.map(|c| c.to_string())),
             CardField::new("Created", resp.created_at.clone()),
         ];
-        print!("{}", render_card(&resp.slug, &resp.name, &[CardSection::Fields(fields)], &ctx.color));
+        print!(
+            "{}",
+            render_card(
+                &resp.slug,
+                &resp.name,
+                &[CardSection::Fields(fields)],
+                &ctx.color
+            )
+        );
     }
     Ok(())
 }

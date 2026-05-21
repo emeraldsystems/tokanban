@@ -57,11 +57,9 @@ impl Ctx {
         if let Some(slug) = flag_value {
             return Ok(slug);
         }
-        self.config
-            .defaults
-            .workspace
-            .clone()
-            .ok_or_else(|| crate::error::CliError::MissingRequired("workspace".into(), "workspace".into()))
+        self.config.defaults.workspace.clone().ok_or_else(|| {
+            crate::error::CliError::MissingRequired("workspace".into(), "workspace".into())
+        })
     }
 
     /// Get the raw project reference from the flag or config default.
@@ -69,11 +67,9 @@ impl Ctx {
         if let Some(key) = flag_value {
             return Ok(key);
         }
-        self.config
-            .defaults
-            .project
-            .clone()
-            .ok_or_else(|| crate::error::CliError::MissingRequired("project".into(), "project".into()))
+        self.config.defaults.project.clone().ok_or_else(|| {
+            crate::error::CliError::MissingRequired("project".into(), "project".into())
+        })
     }
 
     /// Resolve a project reference from the flag or config default to the canonical backend ID.

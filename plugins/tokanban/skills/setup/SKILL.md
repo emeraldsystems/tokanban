@@ -159,7 +159,7 @@ These blocks teach the harness to call:
 
 1. `session_start`
 2. `memory_relevant_now`
-3. `memory_create_fact` and `memory_create_decision` during work
+3. triage candidate memories during work instead of writing every finding immediately
 4. `session_end` with a continuation prompt at the end
 
 ### Verification
@@ -168,7 +168,7 @@ Ask the user to start a short session and verify the harness can:
 
 1. call `session_start`
 2. call `memory_relevant_now`
-3. write a fact
+3. defer at least one candidate and write at least one explicit "remember this" item immediately
 4. close the session with `session_end`
 
 ## Step 5: Verify Setup

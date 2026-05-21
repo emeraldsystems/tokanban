@@ -1,5 +1,4 @@
 /// Tests for authentication flows
-
 mod common;
 
 use common::{setup_temp_config, ConfigBuilder, MockServer};
@@ -65,7 +64,10 @@ fn test_token_storage_in_config() {
 
     let reloaded = tokanban::config::load_config(Some(&config_path)).unwrap();
     assert_eq!(reloaded.auth.token, Some("tk_user_test".to_string()));
-    assert_eq!(reloaded.auth.access_token, Some("tk_access_test".to_string()));
+    assert_eq!(
+        reloaded.auth.access_token,
+        Some("tk_access_test".to_string())
+    );
 }
 
 #[tokio::test]
@@ -88,12 +90,9 @@ async fn test_token_not_expired_skips_refresh() {
     let mut client = tokanban::api::ApiClient::new(&server.base_url(), 30, None).unwrap();
 
     let mut loaded_config = tokanban::config::load_config(Some(&config_path)).unwrap();
-    let result = tokanban::auth::ensure_valid_token(
-        &mut loaded_config,
-        &mut client,
-        Some(&config_path),
-    )
-    .await;
+    let result =
+        tokanban::auth::ensure_valid_token(&mut loaded_config, &mut client, Some(&config_path))
+            .await;
 
     // Should succeed even though no mock is set up
     // (it won't need to refresh since token is fresh)
@@ -129,12 +128,9 @@ async fn test_token_near_expiry_triggers_refresh() {
     let mut loaded_config = tokanban::config::load_config(Some(&config_path)).unwrap();
     let mut client = tokanban::api::ApiClient::new(&server.base_url(), 30, None).unwrap();
 
-    let result = tokanban::auth::ensure_valid_token(
-        &mut loaded_config,
-        &mut client,
-        Some(&config_path),
-    )
-    .await;
+    let result =
+        tokanban::auth::ensure_valid_token(&mut loaded_config, &mut client, Some(&config_path))
+            .await;
 
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "tk_access_refreshed");
@@ -158,12 +154,9 @@ async fn test_static_api_key_skips_refresh() {
     let mut client = tokanban::api::ApiClient::new(&server.base_url(), 30, None).unwrap();
     let mut loaded_config = tokanban::config::load_config(Some(&config_path)).unwrap();
 
-    let result = tokanban::auth::ensure_valid_token(
-        &mut loaded_config,
-        &mut client,
-        Some(&config_path),
-    )
-    .await;
+    let result =
+        tokanban::auth::ensure_valid_token(&mut loaded_config, &mut client, Some(&config_path))
+            .await;
 
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "tk_user_static");

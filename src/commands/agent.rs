@@ -5,9 +5,9 @@ use serde_json::json;
 use crate::api::{MutationResponse, PaginatedResponse};
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors, EM_DASH};
-use crate::format::card::{CardField, CardSection, render_card};
+use crate::format::card::{render_card, CardField, CardSection};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors, EM_DASH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AgentItem {
@@ -89,9 +89,12 @@ pub enum AgentCommand {
 
 pub async fn handle(cmd: &AgentCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
-        AgentCommand::Create { name, r#type, scopes, workspace } => {
-            handle_create(ctx, name, r#type, scopes, workspace.clone()).await
-        }
+        AgentCommand::Create {
+            name,
+            r#type,
+            scopes,
+            workspace,
+        } => handle_create(ctx, name, r#type, scopes, workspace.clone()).await,
         AgentCommand::List { workspace } => handle_list(ctx, workspace.clone()).await,
         AgentCommand::View { id } => handle_view(ctx, id).await,
         AgentCommand::Rotate { id } => handle_rotate(ctx, id).await,
@@ -151,15 +154,22 @@ async fn handle_list(ctx: &Ctx, workspace: Option<String>) -> Result<()> {
             Column::new("Created", 10),
             Column::new("Last used", 10),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.items
+        let rows: Vec<Vec<Option<String>>> = resp
+            .items
             .iter()
-            .map(|a| vec![
-                Some(ctx.color.paint(&a.id, colors::MUTED)),
-                Some(a.name.clone()),
-                Some(a.agent_type.clone().unwrap_or_else(|| EM_DASH.to_string())),
-                Some(a.created_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
-                Some(a.last_used_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
-            ])
+            .map(|a| {
+                vec![
+                    Some(ctx.color.paint(&a.id, colors::MUTED)),
+                    Some(a.name.clone()),
+                    Some(a.agent_type.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                    Some(a.created_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                    Some(
+                        a.last_used_at
+                            .clone()
+                            .unwrap_or_else(|| EM_DASH.to_string()),
+                    ),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -181,7 +191,10 @@ async fn handle_view(ctx: &Ctx, id: &str) -> Result<()> {
         let mut sections = vec![CardSection::Fields(fields)];
         if let Some(scopes) = &resp.scopes {
             let items: Vec<String> = scopes.iter().map(|s| s.clone()).collect();
-            sections.push(CardSection::List { heading: "Scopes".to_string(), items });
+            sections.push(CardSection::List {
+                heading: "Scopes".to_string(),
+                items,
+            });
         }
         print!("{}", render_card(id, &resp.name, &sections, &ctx.color));
     }
@@ -189,7 +202,8 @@ async fn handle_view(ctx: &Ctx, id: &str) -> Result<()> {
 }
 
 async fn handle_rotate(ctx: &Ctx, id: &str) -> Result<()> {
-    let resp: AgentRotateResponse = ctx.api
+    let resp: AgentRotateResponse = ctx
+        .api
         .post(&format!("/v1/agent-keys/{id}/rotate"), &json!({}))
         .await?;
 

@@ -1,5 +1,5 @@
-use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
 use rand::Rng;
 use reqwest::Client;
 use serde::Deserialize;
@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 use url::Url;
 
-use crate::config::{AppConfig, save_config};
+use crate::config::{save_config, AppConfig};
 use crate::error::{CliError, Result};
 
 /// Generate a cryptographically random string for session IDs.
@@ -32,8 +32,12 @@ fn app_base_url(api_base_url: &str) -> Result<String> {
     if let Some(host) = url.host_str() {
         if host.starts_with("api.") {
             let app_host = host.replacen("api.", "app.", 1);
-            url.set_host(Some(&app_host))
-                .map_err(|_| CliError::Config(format!("Could not derive app host from '{}'.", api_base_url)))?;
+            url.set_host(Some(&app_host)).map_err(|_| {
+                CliError::Config(format!(
+                    "Could not derive app host from '{}'.",
+                    api_base_url
+                ))
+            })?;
         }
     }
 
@@ -44,7 +48,11 @@ fn app_base_url(api_base_url: &str) -> Result<String> {
     Ok(url.as_str().trim_end_matches('/').to_string())
 }
 
-async fn fetch_cli_auth_status(client: &Client, app_base: &str, session_id: &str) -> Result<CliAuthStatus> {
+async fn fetch_cli_auth_status(
+    client: &Client,
+    app_base: &str,
+    session_id: &str,
+) -> Result<CliAuthStatus> {
     let response = client
         .get(format!("{}/auth/cli/status", app_base))
         .query(&[("session_id", session_id)])
@@ -84,7 +92,10 @@ fn persist_cli_auth(config: &mut AppConfig, status: &CliAuthStatus, api_key: Str
 }
 
 /// Run the browser-based CLI authorization flow backed by the Pages app.
-pub async fn run_login_flow(config: &mut AppConfig, config_path: Option<&std::path::PathBuf>) -> Result<()> {
+pub async fn run_login_flow(
+    config: &mut AppConfig,
+    config_path: Option<&std::path::PathBuf>,
+) -> Result<()> {
     let session_id = format!("sess_cli_{}", random_string(18));
     let app_base = app_base_url(&config.api.url)?;
     let auth_url = format!(
@@ -142,7 +153,7 @@ pub async fn run_login_flow(config: &mut AppConfig, config_path: Option<&std::pa
 
 #[cfg(test)]
 mod tests {
-    use super::{CliAuthStatus, persist_cli_auth};
+    use super::{persist_cli_auth, CliAuthStatus};
     use crate::config::AppConfig;
 
     fn authorized_status(workspace_id: Option<&str>) -> CliAuthStatus {

@@ -5,8 +5,8 @@ use serde_json::json;
 use crate::api::{MutationResponse, PaginatedResponse};
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors, EM_DASH};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors, EM_DASH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MemberItem {
@@ -60,18 +60,27 @@ pub enum MemberCommand {
 
 pub async fn handle(cmd: &MemberCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
-        MemberCommand::Invite { email, role, workspace } => {
-            handle_invite(ctx, email, role, workspace.clone()).await
-        }
+        MemberCommand::Invite {
+            email,
+            role,
+            workspace,
+        } => handle_invite(ctx, email, role, workspace.clone()).await,
         MemberCommand::List { workspace } => handle_list(ctx, workspace.clone()).await,
         MemberCommand::Update { user_id, role } => handle_update(ctx, user_id, role).await,
-        MemberCommand::Revoke { user_id, workspace, no_confirm: _ } => {
-            handle_revoke(ctx, user_id, workspace.clone()).await
-        }
+        MemberCommand::Revoke {
+            user_id,
+            workspace,
+            no_confirm: _,
+        } => handle_revoke(ctx, user_id, workspace.clone()).await,
     }
 }
 
-async fn handle_invite(ctx: &Ctx, email: &str, role: &str, workspace: Option<String>) -> Result<()> {
+async fn handle_invite(
+    ctx: &Ctx,
+    email: &str,
+    role: &str,
+    workspace: Option<String>,
+) -> Result<()> {
     let ws = ctx.workspace_slug(workspace)?;
     let body = json!({
         "email": email,
@@ -108,15 +117,18 @@ async fn handle_list(ctx: &Ctx, workspace: Option<String>) -> Result<()> {
             Column::new("Role", 8),
             Column::new("Joined", 10),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.items
+        let rows: Vec<Vec<Option<String>>> = resp
+            .items
             .iter()
-            .map(|m| vec![
-                Some(ctx.color.paint(&m.id, colors::MUTED)),
-                Some(m.name.clone()),
-                Some(m.email.clone()),
-                Some(m.role.clone()),
-                Some(m.joined_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
-            ])
+            .map(|m| {
+                vec![
+                    Some(ctx.color.paint(&m.id, colors::MUTED)),
+                    Some(m.name.clone()),
+                    Some(m.email.clone()),
+                    Some(m.role.clone()),
+                    Some(m.joined_at.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -125,7 +137,10 @@ async fn handle_list(ctx: &Ctx, workspace: Option<String>) -> Result<()> {
 
 async fn handle_update(ctx: &Ctx, user_id: &str, role: &str) -> Result<()> {
     let body = json!({ "role": role });
-    let resp: MutationResponse = ctx.api.patch(&format!("/v1/members/{user_id}"), &body).await?;
+    let resp: MutationResponse = ctx
+        .api
+        .patch(&format!("/v1/members/{user_id}"), &body)
+        .await?;
 
     if ctx.format.is_json() {
         format::print_json(&resp);

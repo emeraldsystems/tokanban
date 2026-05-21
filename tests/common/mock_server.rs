@@ -1,7 +1,6 @@
-/// Mock HTTP server for API testing using wiremock
-
-use wiremock::{Mock, MockServer as WireMockServer, ResponseTemplate};
 use wiremock::matchers::{method, path};
+/// Mock HTTP server for API testing using wiremock
+use wiremock::{Mock, MockServer as WireMockServer, ResponseTemplate};
 
 /// Wrapper around wiremock's MockServer for convenient test setup
 pub struct MockServer {
@@ -49,7 +48,13 @@ impl MockServer {
 
     /// Setup a mock error response using the API's structured error format:
     /// { "error": { "code": "...", "message": "...", "details": "...", "hint": "..." } }
-    pub async fn mock_error(&self, method_name: &str, path_str: &str, status: u16, error_json: serde_json::Value) {
+    pub async fn mock_error(
+        &self,
+        method_name: &str,
+        path_str: &str,
+        status: u16,
+        error_json: serde_json::Value,
+    ) {
         let method_matcher = match method_name.to_uppercase().as_str() {
             "GET" => method("GET"),
             "POST" => method("POST"),
@@ -85,7 +90,8 @@ impl MockServer {
                 "hint": hint,
             }
         });
-        self.mock_error(method_name, path_str, status, error_body).await;
+        self.mock_error(method_name, path_str, status, error_body)
+            .await;
     }
 
     /// Setup a 401 unauthorized response
@@ -97,7 +103,8 @@ impl MockServer {
             "AUTH_INVALID_TOKEN",
             "Invalid or expired token",
             Some("Run `tokanban auth login` to authenticate."),
-        ).await;
+        )
+        .await;
     }
 
     /// Setup a 404 not found response
@@ -109,7 +116,8 @@ impl MockServer {
             "NOT_FOUND",
             &format!("{} not found", resource),
             Some(&format!("The {} you requested does not exist", resource)),
-        ).await;
+        )
+        .await;
     }
 
     /// Setup a rate limit response
@@ -121,6 +129,7 @@ impl MockServer {
             "RATE_LIMIT",
             "Too many requests (60/minute)",
             Some("Wait before retrying"),
-        ).await;
+        )
+        .await;
     }
 }

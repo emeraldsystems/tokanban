@@ -11,6 +11,19 @@
 | `tokanban task close <KEY> [--reason R]` | Close a task |
 | `tokanban task reopen <KEY>` | Reopen a task |
 
+## Project Entity Commands
+Keys follow `PROJECT-{DEC,FND,REQ}-<id>`, for example `PLAT-DEC-1`.
+
+| Command | Description |
+|---------|-------------|
+| `tokanban entity create DEC "<title>" [--content C] [--memory-ref M] [--related K]` | Record a core project decision |
+| `tokanban entity create FND "<title>" [--content C] [--memory-ref M]` | Record a useful finding |
+| `tokanban entity create REQ "<title>" [--content C] [--related K]` | Record a requirement that gates success |
+| `tokanban entity list [--kind DEC\|FND\|REQ] [--status S] [--query Q]` | List/filter entities |
+| `tokanban entity view <KEY>` | View entity detail |
+| `tokanban entity update <KEY> [--title T] [--content C] [--status S]` | Update an entity |
+| `tokanban entity delete <KEY>` | Delete an entity |
+
 ## Project Commands
 | Command | Description |
 |---------|-------------|
@@ -76,4 +89,8 @@ Memory-capable agents: add `memory:read,memory:write` to the `--scopes` list and
 `admin` | `editor` | `viewer`
 
 ## Output Formats
-`--format json` | `--format table` | `--format card`
+`--format table` for human-readable task lists and backlog reviews
+`--format json` for parsing, exact IDs, or follow-up command inputs
+`--format card` when a card-style view is preferable, though `table` is usually the best list default
+
+In agent responses: use bullets for a single task, use tables for multi-task lists, and always leave a blank line before markdown tables.

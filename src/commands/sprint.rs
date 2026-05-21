@@ -5,9 +5,9 @@ use serde_json::json;
 use crate::api::{MutationResponse, PaginatedResponse};
 use crate::ctx::Ctx;
 use crate::error::Result;
-use crate::format::{self, colors, EM_DASH};
-use crate::format::card::{CardField, CardSection, render_card};
+use crate::format::card::{render_card, CardField, CardSection};
 use crate::format::table::{render_table, Column};
+use crate::format::{self, colors, EM_DASH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SprintItem {
@@ -83,14 +83,20 @@ pub enum SprintCommand {
 
 pub async fn handle(cmd: &SprintCommand, ctx: &Ctx) -> Result<()> {
     match cmd {
-        SprintCommand::Create { project, name, start, end } => {
-            handle_create(ctx, project.clone(), name, start, end).await
-        }
+        SprintCommand::Create {
+            project,
+            name,
+            start,
+            end,
+        } => handle_create(ctx, project.clone(), name, start, end).await,
         SprintCommand::List { project } => handle_list(ctx, project.clone()).await,
         SprintCommand::View { id } => handle_view(ctx, id).await,
-        SprintCommand::Update { id, name, start, end } => {
-            handle_update(ctx, id, name.as_deref(), start.as_deref(), end.as_deref()).await
-        }
+        SprintCommand::Update {
+            id,
+            name,
+            start,
+            end,
+        } => handle_update(ctx, id, name.as_deref(), start.as_deref(), end.as_deref()).await,
         SprintCommand::Activate { id } => handle_state(ctx, id, "active").await,
         SprintCommand::Close { id } => handle_state(ctx, id, "closed").await,
     }
@@ -142,16 +148,23 @@ async fn handle_list(ctx: &Ctx, project: Option<String>) -> Result<()> {
             Column::new("End", 10),
             Column::new("Tasks", 5).right(),
         ];
-        let rows: Vec<Vec<Option<String>>> = resp.items
+        let rows: Vec<Vec<Option<String>>> = resp
+            .items
             .iter()
-            .map(|s| vec![
-                Some(ctx.color.paint(&s.id, colors::MUTED)),
-                Some(s.name.clone()),
-                Some(s.state.clone().unwrap_or_else(|| "Planned".to_string())),
-                Some(s.start_date.clone().unwrap_or_else(|| EM_DASH.to_string())),
-                Some(s.end_date.clone().unwrap_or_else(|| EM_DASH.to_string())),
-                Some(s.task_count.map(|c| c.to_string()).unwrap_or_else(|| EM_DASH.to_string())),
-            ])
+            .map(|s| {
+                vec![
+                    Some(ctx.color.paint(&s.id, colors::MUTED)),
+                    Some(s.name.clone()),
+                    Some(s.state.clone().unwrap_or_else(|| "Planned".to_string())),
+                    Some(s.start_date.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                    Some(s.end_date.clone().unwrap_or_else(|| EM_DASH.to_string())),
+                    Some(
+                        s.task_count
+                            .map(|c| c.to_string())
+                            .unwrap_or_else(|| EM_DASH.to_string()),
+                    ),
+                ]
+            })
             .collect();
         print!("{}", render_table(&columns, &rows, &ctx.color));
     }
@@ -169,13 +182,19 @@ async fn handle_view(ctx: &Ctx, id: &str) -> Result<()> {
             _ => None,
         };
         let fields = vec![
-            CardField::required("State", resp.state.clone().unwrap_or_else(|| "Planned".to_string())),
+            CardField::required(
+                "State",
+                resp.state.clone().unwrap_or_else(|| "Planned".to_string()),
+            ),
             CardField::new("Start", resp.start_date.clone()),
             CardField::new("End", resp.end_date.clone()),
             CardField::new("Tasks", resp.task_count.map(|c| c.to_string())),
             CardField::new("Progress", progress),
         ];
-        print!("{}", render_card(id, &resp.name, &[CardSection::Fields(fields)], &ctx.color));
+        print!(
+            "{}",
+            render_card(id, &resp.name, &[CardSection::Fields(fields)], &ctx.color)
+        );
     }
     Ok(())
 }
@@ -188,9 +207,15 @@ async fn handle_update(
     end: Option<&str>,
 ) -> Result<()> {
     let mut body = json!({});
-    if let Some(n) = name { body["name"] = json!(n); }
-    if let Some(s) = start { body["start_date"] = json!(s); }
-    if let Some(e) = end { body["end_date"] = json!(e); }
+    if let Some(n) = name {
+        body["name"] = json!(n);
+    }
+    if let Some(s) = start {
+        body["start_date"] = json!(s);
+    }
+    if let Some(e) = end {
+        body["end_date"] = json!(e);
+    }
 
     let resp: MutationResponse = ctx.api.patch(&format!("/v1/sprints/{id}"), &body).await?;
 
@@ -209,7 +234,11 @@ async fn handle_state(ctx: &Ctx, id: &str, state: &str) -> Result<()> {
 
     if !ctx.quiet {
         let check = ctx.color.paint("✓", colors::SUCCESS);
-        let action = if state == "active" { "activated" } else { "closed" };
+        let action = if state == "active" {
+            "activated"
+        } else {
+            "closed"
+        };
         format::print_inline(&format!("{check} Sprint {id} {action}"));
     }
     Ok(())

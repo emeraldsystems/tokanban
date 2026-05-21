@@ -3,13 +3,12 @@
 /// Tests verify that completion scripts are generated for bash, zsh, and fish,
 /// with proper error handling for invalid shells, and that all commands/flags
 /// appear in the generated scripts.
-
 mod common;
 
-use std::process::Command;
-use tokanban::cli::Cli;
 use clap::CommandFactory;
 use clap_complete::shells;
+use std::process::Command;
+use tokanban::cli::Cli;
 
 /// Helper: generate a completion script for the given shell into a String.
 fn generate_completion<G: clap_complete::Generator>(gen: G) -> String {
@@ -26,16 +25,31 @@ fn generate_completion<G: clap_complete::Generator>(gen: G) -> String {
 #[test]
 fn test_bash_completion_generated() {
     let script = generate_completion(shells::Bash);
-    assert!(!script.is_empty(), "Bash completion script should not be empty");
-    assert!(script.contains("tokanban"), "Bash script should reference binary name");
+    assert!(
+        !script.is_empty(),
+        "Bash completion script should not be empty"
+    );
+    assert!(
+        script.contains("tokanban"),
+        "Bash script should reference binary name"
+    );
 }
 
 #[test]
 fn test_bash_completion_syntax_valid() {
     let script = generate_completion(shells::Bash);
-    assert!(script.contains("_tokanban"), "Bash script should define _tokanban function");
-    assert!(script.contains("COMPREPLY"), "Bash script should use COMPREPLY");
-    assert!(script.contains("complete"), "Bash script should register completion");
+    assert!(
+        script.contains("_tokanban"),
+        "Bash script should define _tokanban function"
+    );
+    assert!(
+        script.contains("COMPREPLY"),
+        "Bash script should use COMPREPLY"
+    );
+    assert!(
+        script.contains("complete"),
+        "Bash script should register completion"
+    );
 }
 
 // ============================================================================
@@ -45,14 +59,23 @@ fn test_bash_completion_syntax_valid() {
 #[test]
 fn test_zsh_completion_generated() {
     let script = generate_completion(shells::Zsh);
-    assert!(!script.is_empty(), "Zsh completion script should not be empty");
-    assert!(script.contains("tokanban"), "Zsh script should reference binary name");
+    assert!(
+        !script.is_empty(),
+        "Zsh completion script should not be empty"
+    );
+    assert!(
+        script.contains("tokanban"),
+        "Zsh script should reference binary name"
+    );
 }
 
 #[test]
 fn test_zsh_completion_syntax_valid() {
     let script = generate_completion(shells::Zsh);
-    assert!(script.contains("#compdef"), "Zsh script should start with #compdef");
+    assert!(
+        script.contains("#compdef"),
+        "Zsh script should start with #compdef"
+    );
 }
 
 // ============================================================================
@@ -62,8 +85,14 @@ fn test_zsh_completion_syntax_valid() {
 #[test]
 fn test_fish_completion_generated() {
     let script = generate_completion(shells::Fish);
-    assert!(!script.is_empty(), "Fish completion script should not be empty");
-    assert!(script.contains("tokanban"), "Fish script should reference binary name");
+    assert!(
+        !script.is_empty(),
+        "Fish completion script should not be empty"
+    );
+    assert!(
+        script.contains("tokanban"),
+        "Fish script should reference binary name"
+    );
 }
 
 #[test]
@@ -83,11 +112,24 @@ fn test_fish_completion_syntax_valid() {
 fn test_all_command_names_in_bash() {
     let script = generate_completion(shells::Bash);
     for cmd in &[
-        "auth", "workspace", "project", "task", "sprint",
-        "comment", "member", "agent", "workflow", "import",
-        "viz", "completion",
+        "auth",
+        "workspace",
+        "project",
+        "task",
+        "entity",
+        "sprint",
+        "comment",
+        "member",
+        "agent",
+        "workflow",
+        "import",
+        "viz",
+        "completion",
     ] {
-        assert!(script.contains(cmd), "Bash completions should contain command '{cmd}'");
+        assert!(
+            script.contains(cmd),
+            "Bash completions should contain command '{cmd}'"
+        );
     }
 }
 
@@ -95,15 +137,34 @@ fn test_all_command_names_in_bash() {
 fn test_auth_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["login", "logout", "status"] {
-        assert!(script.contains(sub), "Completions should contain auth subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain auth subcommand '{sub}'"
+        );
     }
 }
 
 #[test]
 fn test_task_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
-    for sub in &["create", "list", "view", "update", "search", "close", "reopen"] {
-        assert!(script.contains(sub), "Completions should contain task subcommand '{sub}'");
+    for sub in &[
+        "create", "list", "view", "update", "search", "close", "reopen",
+    ] {
+        assert!(
+            script.contains(sub),
+            "Completions should contain task subcommand '{sub}'"
+        );
+    }
+}
+
+#[test]
+fn test_entity_subcommands_in_completions() {
+    let script = generate_completion(shells::Bash);
+    for sub in &["create", "list", "view", "update", "delete"] {
+        assert!(
+            script.contains(sub),
+            "Completions should contain entity subcommand '{sub}'"
+        );
     }
 }
 
@@ -111,7 +172,10 @@ fn test_task_subcommands_in_completions() {
 fn test_project_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["create", "list", "view", "update", "archive"] {
-        assert!(script.contains(sub), "Completions should contain project subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain project subcommand '{sub}'"
+        );
     }
 }
 
@@ -119,7 +183,10 @@ fn test_project_subcommands_in_completions() {
 fn test_sprint_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["create", "list", "view", "start", "close"] {
-        assert!(script.contains(sub), "Completions should contain sprint subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain sprint subcommand '{sub}'"
+        );
     }
 }
 
@@ -127,7 +194,10 @@ fn test_sprint_subcommands_in_completions() {
 fn test_member_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["invite", "list", "update", "revoke"] {
-        assert!(script.contains(sub), "Completions should contain member subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain member subcommand '{sub}'"
+        );
     }
 }
 
@@ -135,7 +205,10 @@ fn test_member_subcommands_in_completions() {
 fn test_agent_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["create", "list", "view", "rotate", "revoke", "scopes"] {
-        assert!(script.contains(sub), "Completions should contain agent subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain agent subcommand '{sub}'"
+        );
     }
 }
 
@@ -143,7 +216,10 @@ fn test_agent_subcommands_in_completions() {
 fn test_viz_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["kanban", "burndown", "timeline"] {
-        assert!(script.contains(sub), "Completions should contain viz subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain viz subcommand '{sub}'"
+        );
     }
 }
 
@@ -151,7 +227,10 @@ fn test_viz_subcommands_in_completions() {
 fn test_import_subcommands_in_completions() {
     let script = generate_completion(shells::Bash);
     for sub in &["jira", "csv"] {
-        assert!(script.contains(sub), "Completions should contain import subcommand '{sub}'");
+        assert!(
+            script.contains(sub),
+            "Completions should contain import subcommand '{sub}'"
+        );
     }
 }
 
@@ -163,18 +242,33 @@ fn test_import_subcommands_in_completions() {
 fn test_global_flags_in_completions() {
     let script = generate_completion(shells::Bash);
     for flag in &[
-        "--format", "--quiet", "--verbose", "--no-color",
-        "--workspace", "--project", "--config", "--api-url",
+        "--format",
+        "--quiet",
+        "--verbose",
+        "--no-color",
+        "--workspace",
+        "--project",
+        "--config",
+        "--api-url",
     ] {
-        assert!(script.contains(flag), "Completions should contain global flag '{flag}'");
+        assert!(
+            script.contains(flag),
+            "Completions should contain global flag '{flag}'"
+        );
     }
 }
 
 #[test]
 fn test_help_and_version_flags() {
     let script = generate_completion(shells::Bash);
-    assert!(script.contains("--help"), "Completions should contain --help");
-    assert!(script.contains("--version"), "Completions should contain --version");
+    assert!(
+        script.contains("--help"),
+        "Completions should contain --help"
+    );
+    assert!(
+        script.contains("--version"),
+        "Completions should contain --version"
+    );
 }
 
 // ============================================================================
@@ -184,9 +278,18 @@ fn test_help_and_version_flags() {
 #[test]
 fn test_all_shells_contain_all_commands() {
     let commands = [
-        "auth", "workspace", "project", "task", "sprint",
-        "comment", "member", "agent", "workflow", "import",
-        "viz", "completion",
+        "auth",
+        "workspace",
+        "project",
+        "task",
+        "sprint",
+        "comment",
+        "member",
+        "agent",
+        "workflow",
+        "import",
+        "viz",
+        "completion",
     ];
     let bash = generate_completion(shells::Bash);
     let zsh = generate_completion(shells::Zsh);
@@ -236,21 +339,30 @@ fn test_shells_generate_different_output() {
 fn test_task_create_flags_in_completions() {
     let script = generate_completion(shells::Bash);
     for flag in &["--priority", "--assignee", "--sprint", "--status"] {
-        assert!(script.contains(flag), "Completions should contain task create flag '{flag}'");
+        assert!(
+            script.contains(flag),
+            "Completions should contain task create flag '{flag}'"
+        );
     }
 }
 
 #[test]
 fn test_member_invite_role_flag() {
     let script = generate_completion(shells::Bash);
-    assert!(script.contains("--role"), "Completions should contain member invite --role flag");
+    assert!(
+        script.contains("--role"),
+        "Completions should contain member invite --role flag"
+    );
 }
 
 #[test]
 fn test_workflow_update_flags() {
     let script = generate_completion(shells::Bash);
     for flag in &["--add-status", "--remove-status", "--migrate"] {
-        assert!(script.contains(flag), "Completions should contain workflow update flag '{flag}'");
+        assert!(
+            script.contains(flag),
+            "Completions should contain workflow update flag '{flag}'"
+        );
     }
 }
 
@@ -269,7 +381,10 @@ fn test_unknown_shell_error_message() {
     let result = tokanban::commands::completion::handle("powershell");
     let err = result.unwrap_err();
     let rendered = err.render();
-    assert!(rendered.contains("powershell"), "Error message should mention the unknown shell name");
+    assert!(
+        rendered.contains("powershell"),
+        "Error message should mention the unknown shell name"
+    );
 }
 
 #[test]

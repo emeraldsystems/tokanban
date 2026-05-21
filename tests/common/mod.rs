@@ -1,10 +1,9 @@
-/// Common test utilities, fixtures, and helpers
-
-pub mod mock_server;
 pub mod fixtures;
+/// Common test utilities, fixtures, and helpers
+pub mod mock_server;
 
-pub use mock_server::MockServer;
 pub use fixtures::*;
+pub use mock_server::MockServer;
 
 /// Create a temporary config directory for tests
 pub fn setup_temp_config() -> tempfile::TempDir {
@@ -31,10 +30,7 @@ pub mod assertions {
     use assert_matches::assert_matches;
 
     /// Assert that a result contains a specific error message
-    pub fn assert_error_message<T, E: std::fmt::Display>(
-        result: Result<T, E>,
-        expected_msg: &str,
-    ) {
+    pub fn assert_error_message<T, E: std::fmt::Display>(result: Result<T, E>, expected_msg: &str) {
         match result {
             Ok(_) => panic!("expected error, got Ok"),
             Err(e) => {
