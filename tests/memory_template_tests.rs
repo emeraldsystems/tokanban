@@ -30,3 +30,12 @@ fn claude_memory_block_covers_review_then_session_end_flow() {
     assert!(body.contains("session_end"));
     assert!(body.contains("clear_after_session_end_ids"));
 }
+
+#[test]
+fn plugin_hooks_register_usage_reporter() {
+    let body = template("hooks/hooks.json");
+
+    assert!(body.contains("\"Stop\""));
+    assert!(body.contains("\"SessionEnd\""));
+    assert!(body.contains("tokanban session report-usage"));
+}

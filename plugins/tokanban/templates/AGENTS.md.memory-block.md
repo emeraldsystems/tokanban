@@ -4,8 +4,8 @@ Use Tokanban memory tools automatically when working in a known Tokanban project
 
 At session start:
 
-1. Call `session_start({ project_id, working_directory, source_harness, task_id, key_files, partition_path })`
-2. Call `memory_relevant_now({ project_id, working_directory, files, task_id, module, partition_path })`
+1. Reuse a canonical `session_id` supplied by a Tokanban startup hook. Otherwise call `session_start({ project_id, working_directory, source_harness, harness_session_id?, session_kind?, parent_session_id?, task_id, key_files, partition_path })` once. Use the actual harness session identity when available; do not invent one from a directory. Declare subagent/evaluation/test kinds only when known; unclassified runs remain unknown.
+2. Call `memory_relevant_now({ session_id, project_id, working_directory, files, task_id, module, partition_path })`
 3. Read the continuation prompt before proceeding
 
 During work:

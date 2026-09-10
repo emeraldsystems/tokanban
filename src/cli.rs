@@ -81,6 +81,14 @@ pub enum Command {
     #[command(subcommand)]
     Project(commands::project::ProjectCommand),
 
+    /// Git repository connections and task pull requests
+    #[command(subcommand)]
+    Git(commands::git::GitCommand),
+
+    /// Private handoff suggestions, review actions and historical imports
+    #[command(subcommand)]
+    Followup(commands::followup::FollowupCommand),
+
     /// Task management
     #[command(subcommand)]
     Task(commands::task::TaskCommand),
@@ -117,9 +125,28 @@ pub enum Command {
     #[command(subcommand)]
     Viz(commands::viz::VizCommand),
 
+    /// Workspace token usage and estimated cost
+    Usage(commands::usage::UsageArgs),
+
+    /// Session helpers
+    #[command(subcommand, hide = true)]
+    Session(commands::session::SessionCommand),
+
     /// Local memory scoring helpers
     #[command(subcommand)]
     Memory(commands::memory::MemoryCommand),
+
+    /// Discover checkouts and manage explicit repository memory bindings
+    #[command(subcommand)]
+    Repo(commands::repo::RepoCommand),
+
+    /// Bootstrap Claude Code, Codex, or Cursor for Tokanban (MCP server, memory
+    /// behavioral block, and usage-reporting hooks). Safe to re-run; previews
+    /// changes unless `--yes` is passed.
+    Init(commands::init::InitArgs),
+
+    /// Diagnose configuration and reporting (read-only; offline unless --online is selected)
+    Doctor(commands::doctor::DoctorArgs),
 
     /// Generate shell completion scripts
     Completion {

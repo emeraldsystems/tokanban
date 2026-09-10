@@ -125,6 +125,8 @@ pub struct TaskItem {
     pub title: String,
     pub status: String,
     #[serde(default)]
+    pub ownership: Option<TaskOwnership>,
+    #[serde(default)]
     pub priority: Option<String>,
     #[serde(default)]
     pub assignee: Option<AssigneeInfo>,
@@ -144,6 +146,8 @@ pub struct TaskDetailResponse {
     pub key: String,
     pub title: String,
     pub status: String,
+    #[serde(default)]
+    pub ownership: Option<TaskOwnership>,
     #[serde(default, rename = "type")]
     pub task_type: Option<String>,
     #[serde(default)]
@@ -176,6 +180,19 @@ pub struct TaskDetailResponse {
     pub created_at: Option<String>,
     #[serde(default)]
     pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TaskOwnership {
+    pub claim_id: String,
+    pub actor_id: String,
+    pub actor_type: String,
+    pub actor_name: String,
+    pub user_id: String,
+    pub session_id: String,
+    pub acquired_at: String,
+    pub expires_at: String,
+    pub state: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

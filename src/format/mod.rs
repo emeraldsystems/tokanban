@@ -220,6 +220,7 @@ pub struct TaskSummary {
 
 /// Full task data for detail card view.
 pub struct TaskDetail {
+    pub ownership: Option<String>,
     pub key: String,
     pub title: String,
     pub status: String,
@@ -320,6 +321,12 @@ pub fn print_task_card<T: serde::Serialize>(
                 card::CardField::new("Reporter", task.reporter.clone()),
             ];
             sections.push(card::CardSection::Fields(fields));
+            if let Some(ownership) = &task.ownership {
+                sections.push(card::CardSection::Prose {
+                    heading: "Ownership".to_string(),
+                    body: ownership.clone(),
+                });
+            }
 
             // Description.
             if let Some(desc) = &task.description {

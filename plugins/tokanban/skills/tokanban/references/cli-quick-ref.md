@@ -10,6 +10,16 @@
 | `tokanban task search "<query>" [--limit N]` | Full-text search |
 | `tokanban task close <KEY> [--reason R]` | Close a task |
 | `tokanban task reopen <KEY>` | Reopen a task |
+| `tokanban task list --available` | Open, unblocked tasks without an active ownership claim |
+| `tokanban task claim <KEY> --session <RUN_ID> [--ttl-seconds 1800]` | Atomically claim work for a distinct agent run |
+| `tokanban task renew <KEY> --claim-id <CLAIM_ID>` | Renew before expiry; a lost claim is rejected |
+| `tokanban task release <KEY> --claim-id <CLAIM_ID>` | Release work for another session |
+
+When coordinating agent work, claim a task before starting, retain the returned
+`ownership.claim_id`, and include `--claim-id` on `task update` and `task close`.
+Use a unique session ID for each independently executing run. Renew well before
+the default 30-minute expiry; stop and refresh if renewal or a guarded update
+returns `TASK_CLAIM_LOST`. Claims preserve the human assignee and workflow status.
 
 ## Project Entity Commands
 Keys follow `PROJECT-{DEC,FND,REQ}-<id>`, for example `PLAT-DEC-1`.
@@ -63,6 +73,28 @@ Keys follow `PROJECT-{DEC,FND,REQ}-<id>`, for example `PLAT-DEC-1`.
 | `tokanban agent revoke <ID>` | Revoke agent |
 
 Memory-capable agents: add `memory:read,memory:write` to the `--scopes` list and install the harness blocks from `templates/`.
+
+## Repository Memory Commands
+`repo inspect` is read-only and offline by default (no auth/network); every other subcommand is an explicit, authenticated REST action. Identity is always explicit — nothing is bound by matching a folder name or remote URL. `--expected-revision` is a non-negative integer (0 or omitted means "first bind"); invalid values are rejected before any network call.
+
+| Command | Description |
+|---------|-------------|
+| `tokanban repo inspect [--path P] [--binding]` | Local Git discovery (root, worktree/common git dir, branch/detached HEAD, normalized remote); `--binding` also fetches the current binding |
+| `tokanban repo create <NAME> [--remote URL] [--project ID]` | Create a new repository-memory identity |
+| `tokanban repo list [--limit N] [--offset N]` | List repository identities |
+| `tokanban repo aliases [--path P]` | Show name/remote matches for manual review only — never binds automatically |
+| `tokanban repo bind <REPOSITORY_ID> [--path P] [--branch B] [--kind main\|worktree\|clone\|unknown] [--expected-revision N]` | Bind (or rebind) a working directory; omit `--expected-revision` for the first bind |
+| `tokanban repo unbind --expected-revision N [--path P]` | Deactivate the binding for a working directory |
+| `tokanban repo history [--checkout-id ID] [--path P]` | Show checkout binding history |
+
+### Repository Scope Commands (historical promotion)
+Explicit, reviewable promotion of existing facts/decisions into repository-shared (or branch/workdir/experiment) scope. Preview never writes. Apply never re-previews silently — it only ever resends a plan file already shown to the user.
+
+| Command | Description |
+|---------|-------------|
+| `tokanban repo scope preview --repository-id ID --memory-id ID [--memory-id ID ...] [--scope repository\|branch\|workdir\|experiment] [--branch B] [--experiment E]` | Preview a scope change for 1-50 explicit memory IDs (read-only); save with `--format json > plan.json` |
+| `tokanban repo scope apply --plan plan.json` | Apply exactly the reviewed selection and fingerprint from a saved preview plan file |
+| `tokanban repo scope restore <OPERATION_ID>` | Restore the scopes from before a prior scope operation (idempotent) |
 
 ## Other Commands
 | Command | Description |

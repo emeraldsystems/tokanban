@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux ARM cross compiler
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure ARM linker
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+
+      - name: Verify Cargo package version matches tag
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[] | select(.name=="tokanban") | .version')"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Cargo.toml version ($PKG_VERSION) does not match tag version ($TAG_VERSION)" >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf "tokanban-${{ matrix.target }}.tar.gz" tokanban
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            shasum -a 256 "tokanban-${{ matrix.target }}.tar.gz" > "tokanban-${{ matrix.target }}.tar.gz.sha256"
+          else
+            sha256sum "tokanban-${{ matrix.target }}.tar.gz" > "tokanban-${{ matrix.target }}.tar.gz.sha256"
+          fi
+          mv "tokanban-${{ matrix.target }}.tar.gz" "tokanban-${{ matrix.target }}.tar.gz.sha256" "$GITHUB_WORKSPACE/"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-Location target/${{ matrix.target }}/release
+          Compress-Archive -Path tokanban.exe -DestinationPath tokanban-${{ matrix.target }}.zip
+          $hash = (Get-FileHash tokanban-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  tokanban-${{ matrix.target }}.zip" | Out-File -Encoding ascii tokanban-${{ matrix.target }}.zip.sha256
+          Move-Item tokanban-${{ matrix.target }}.zip,tokanban-${{ matrix.target }}.zip.sha256 -Destination $env:GITHUB_WORKSPACE
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokanban-${{ matrix.target }}
+          path: |
+            tokanban-${{ matrix.target }}.tar.gz
+            tokanban-${{ matrix.target }}.tar.gz.sha256
+            tokanban-${{ matrix.target }}.zip
+            tokanban-${{ matrix.target }}.zip.sha256
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          fail_on_unmatched_files: true

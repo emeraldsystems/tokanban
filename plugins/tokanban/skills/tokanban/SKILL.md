@@ -80,6 +80,10 @@ Shows full detail: title, description, status, priority, assignee, labels, sprin
 
 ### Update a task
 
+When starting implementation as an agent, claim the task with `tokanban task claim PLAT-42 --session <UNIQUE_RUN_ID> --format json`. Keep `ownership.claim_id`, pass `--claim-id <CLAIM_ID>` on subsequent task updates and completion, and renew well before the default 30-minute expiry. Each independently executing run needs a distinct session ID. Read-only reviews and backlog maintenance do not need a claim.
+
+`TASK_ALREADY_CLAIMED` means another run owns the task; `TASK_CLAIM_LOST` means stop using that claim and refresh before resuming. Release when handing off; normal completion also releases ownership. Claims preserve the assignee and status. See [task ownership commands](references/cli-quick-ref.md) for available-work filtering, renewal, and release. MCP equivalents are `claim_task`, `renew_task_claim`, `release_task_claim`, and `update_task.claim_id`.
+
 ```bash
 tokanban task update PLAT-42 \
   --title "New title" \

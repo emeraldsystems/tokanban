@@ -48,6 +48,12 @@ pub enum TaskCommand {
         /// Filter by due date (ISO 8601)
         #[arg(long)]
         due: Option<String>,
+        /// Only open tasks with no unfinished blockers
+        #[arg(long)]
+        ready: bool,
+        /// Only open, unblocked tasks without an active claim
+        #[arg(long)]
+        available: bool,
         /// Cursor for pagination
         #[arg(long)]
         cursor: Option<String>,
@@ -64,6 +70,9 @@ pub enum TaskCommand {
     Update {
         /// Task key
         key: String,
+        /// Reject the update if this ownership claim has expired or been replaced
+        #[arg(long)]
+        claim_id: Option<String>,
         /// New title
         #[arg(long)]
         title: Option<String>,
@@ -83,6 +92,30 @@ pub enum TaskCommand {
         #[arg(long)]
         description: Option<String>,
     },
+    /// Claim an open, unblocked task for this session (does not change assignee/status)
+    Claim {
+        key: String,
+        /// Unique identifier for this agent run
+        #[arg(long)]
+        session: String,
+        /// Lease duration, 60–3600 seconds; renew before expiry
+        #[arg(long, default_value = "1800", value_parser = clap::value_parser!(u32).range(60..=3600))]
+        ttl_seconds: u32,
+    },
+    /// Renew your current task claim before it expires
+    Renew {
+        key: String,
+        #[arg(long)]
+        claim_id: String,
+        #[arg(long, default_value = "1800", value_parser = clap::value_parser!(u32).range(60..=3600))]
+        ttl_seconds: u32,
+    },
+    /// Release your current task claim without changing task status
+    Release {
+        key: String,
+        #[arg(long)]
+        claim_id: String,
+    },
     /// Search tasks by free-text query
     Search {
         /// Search query
@@ -101,6 +134,9 @@ pub enum TaskCommand {
         /// Reason for closing
         #[arg(long)]
         reason: Option<String>,
+        /// Reject completion if ownership has expired or been replaced
+        #[arg(long)]
+        claim_id: Option<String>,
     },
     /// Reopen a closed task
     Reopen {
@@ -137,6 +173,8 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
             sprint,
             priority,
             due,
+            ready,
+            available,
             cursor,
             limit,
         } => {
@@ -148,6 +186,8 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
                 sprint.as_deref(),
                 priority.as_deref(),
                 due.as_deref(),
+                *ready,
+                *available,
                 cursor.as_deref(),
                 *limit,
             )
@@ -156,6 +196,7 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
         TaskCommand::View { key } => handle_view(ctx, key).await,
         TaskCommand::Update {
             key,
+            claim_id,
             title,
             status,
             assignee,
@@ -166,6 +207,7 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
             handle_update(
                 ctx,
                 key,
+                claim_id.as_deref(),
                 title.as_deref(),
                 status.as_deref(),
                 assignee.as_deref(),
@@ -180,7 +222,40 @@ pub async fn handle(cmd: &TaskCommand, ctx: &Ctx) -> Result<()> {
             project,
             limit,
         } => handle_search(ctx, query, project.clone(), *limit).await,
-        TaskCommand::Close { key, reason } => handle_close(ctx, key, reason.as_deref()).await,
+        TaskCommand::Claim {
+            key,
+            session,
+            ttl_seconds,
+        } => {
+            handle_claim(
+                ctx,
+                key,
+                "",
+                json!({ "session_id": session, "ttl_seconds": ttl_seconds }),
+            )
+            .await
+        }
+        TaskCommand::Renew {
+            key,
+            claim_id,
+            ttl_seconds,
+        } => {
+            handle_claim(
+                ctx,
+                key,
+                "/renew",
+                json!({ "claim_id": claim_id, "ttl_seconds": ttl_seconds }),
+            )
+            .await
+        }
+        TaskCommand::Release { key, claim_id } => {
+            handle_claim(ctx, key, "/release", json!({ "claim_id": claim_id })).await
+        }
+        TaskCommand::Close {
+            key,
+            reason,
+            claim_id,
+        } => handle_close(ctx, key, reason.as_deref(), claim_id.as_deref()).await,
         TaskCommand::Reopen { key } => handle_reopen(ctx, key).await,
     }
 }
@@ -233,12 +308,20 @@ async fn handle_list(
     sprint: Option<&str>,
     priority: Option<&str>,
     due: Option<&str>,
+    ready: bool,
+    available: bool,
     cursor: Option<&str>,
     limit: u32,
 ) -> Result<()> {
     let project_id = ctx.project_id(project).await?;
 
     let mut url = format!("/v1/projects/{project_id}/tasks?limit={limit}");
+    if ready {
+        url.push_str("&ready=true");
+    }
+    if available {
+        url.push_str("&available=true");
+    }
     if let Some(s) = status {
         let normalized = normalize_status(s);
         url.push_str(&format!("&status={}", enc(&normalized)));
@@ -272,6 +355,19 @@ async fn handle_list(
             ctx.format,
             &ctx.color,
         );
+        for task in &resp.items {
+            if let Some(owner) = &task.ownership {
+                format::print_inline(&format!(
+                    "{} — {} claim: {} ({}, session {}), expires {}",
+                    task.key,
+                    owner.state,
+                    owner.actor_name,
+                    owner.actor_type,
+                    owner.session_id,
+                    owner.expires_at
+                ));
+            }
+        }
         if let Some(next_cursor) = &resp.cursor {
             let remaining = resp.total.saturating_sub(resp.items.len() as u64);
             if remaining > 0 {
@@ -302,6 +398,7 @@ async fn handle_view(ctx: &Ctx, key: &str) -> Result<()> {
 async fn handle_update(
     ctx: &Ctx,
     key: &str,
+    claim_id: Option<&str>,
     title: Option<&str>,
     status: Option<&str>,
     assignee: Option<&str>,
@@ -316,6 +413,9 @@ async fn handle_update(
     };
 
     let mut body = json!({});
+    if let Some(id) = claim_id {
+        body["claim_id"] = json!(id);
+    }
     if let Some(t) = title {
         body["title"] = json!(t);
     }
@@ -377,8 +477,34 @@ async fn handle_search(ctx: &Ctx, query: &str, project: Option<String>, limit: u
     Ok(())
 }
 
-async fn handle_close(ctx: &Ctx, key: &str, reason: Option<&str>) -> Result<()> {
+async fn handle_claim(ctx: &Ctx, key: &str, suffix: &str, body: serde_json::Value) -> Result<()> {
+    let resp: TaskDetailResponse = ctx
+        .api
+        .post(&format!("/v1/tasks/{}/claim{suffix}", enc(key)), &body)
+        .await?;
+    if ctx.format.is_json() {
+        format::print_json(&resp);
+    } else {
+        format::print_task_card(
+            &task_detail_to_display(&resp),
+            Option::<&TaskDetailResponse>::None,
+            ctx.format,
+            &ctx.color,
+        );
+    }
+    Ok(())
+}
+
+async fn handle_close(
+    ctx: &Ctx,
+    key: &str,
+    reason: Option<&str>,
+    claim_id: Option<&str>,
+) -> Result<()> {
     let mut body = json!({ "status": "done" });
+    if let Some(id) = claim_id {
+        body["claim_id"] = json!(id);
+    }
     if let Some(r) = reason {
         body["close_reason"] = json!(r);
     }
@@ -425,6 +551,12 @@ fn task_item_to_summary(t: &TaskItem) -> TaskSummary {
 
 fn task_detail_to_display(t: &TaskDetailResponse) -> TaskDetail {
     TaskDetail {
+        ownership: t.ownership.as_ref().map(|o| {
+            format!(
+                "{} ({}) — {}\nSession: {}\nExpires: {}\nClaim: {}",
+                o.actor_name, o.actor_type, o.state, o.session_id, o.expires_at, o.claim_id
+            )
+        }),
         key: t.key.clone(),
         title: t.title.clone(),
         status: t.status.clone(),

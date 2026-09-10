@@ -59,6 +59,16 @@ impl ApiClient {
             .await
     }
 
+    /// Send a DELETE request with a JSON body (some endpoints, e.g. checkout
+    /// unbind, require identifying fields in the body rather than the path).
+    pub async fn delete_with_body<T: DeserializeOwned, B: serde::Serialize>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<T> {
+        self.request(Method::DELETE, path, Some(body)).await
+    }
+
     /// Send a multipart POST request (used for file uploads, e.g., import).
     pub async fn post_multipart<T: DeserializeOwned>(
         &self,

@@ -1,6 +1,8 @@
 ## Tokanban Memory
 
-At the start of a coding session, call `session_start` with the current `project_id` and/or `working_directory`, then call `memory_relevant_now` before doing substantive work.
+At the start of a coding session, reuse the canonical `session_id` supplied by the Tokanban SessionStart hook. The hook has already called `session_start`; do not create another session. Call `memory_relevant_now` with that `session_id` and the confirmed `project_id` and/or `working_directory` before substantive work.
+
+If no startup mapping was supplied, call `session_start` once with `source_harness: "claude-code"` and the current roots. Include the real `harness_session_id` when the harness exposes it, and reuse the returned ID. Never invent a harness identity from a directory name. Declare `session_kind` and `parent_session_id` only when known; an unclassified run stays `unknown`.
 
 During work:
 

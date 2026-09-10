@@ -1,5 +1,12 @@
 # Tokanban
 
+Task ownership is available through `tokanban task claim TASK-1 --session RUN_ID`,
+`task renew TASK-1 --claim-id CLAIM_ID`, and `task release TASK-1 --claim-id CLAIM_ID`.
+Use `task list --available` to find unblocked work without an active claim, and pass
+`--claim-id` to task updates or completion to reject writes after ownership is lost.
+Claims default to 30 minutes; renew them before expiry. Assignees and workflow status
+remain independent of the currently executing agent.
+
 Agent-first task management and durable memory for AI coding teams.
 
 Tokanban gives Claude Code, Codex CLI, Cursor, OpenCode, CI bots, and custom MCP clients one shared work layer: tasks agents can update safely, memory agents can carry across sessions, and audit trails humans can trust.
@@ -41,7 +48,7 @@ curl -fsSL https://app.tokanban.com/install.sh | sh
 Or install from Cargo:
 
 ```sh
-cargo install --locked tokanban
+cargo install --locked --git https://github.com/emeraldsystems/tokanban --tag v0.4.0
 ```
 
 Pre-built binaries are published for Linux, macOS, and Windows on the [GitHub Releases](https://github.com/emeraldsystems/tokanban/releases) page. The install script downloads a matching binary when available and falls back to Cargo when needed.
@@ -185,6 +192,21 @@ tokanban agent rotate <agent-id>
 tokanban task list --format json | jq '.items[] | {key,title,status}'
 ```
 
+## Setup and reporting diagnostics
+
+```sh
+tokanban doctor
+tokanban doctor --online
+tokanban --format json doctor --check-connection
+tokanban --config /path/to/tokanban.toml doctor --online --claude-config /path/to/claude.json
+```
+
+Doctor is read-only and offline by default. It reports configuration and hook presence, session mapping, and recorded usage outcomes; unknown telemetry remains unmeasured. Recorded usage history can include multiple local accounts.
+
+`--online` (alias `--check-connection`) separately checks the current reporter account with one authenticated MCP `tools/list` request. It uses the reporter's exact credential precedence for the current directory, including `TOKANBAN_API_KEY`, Claude local/project/user MCP entries, `CLAUDE_CONFIG_DIR`, and matching CLI credentials. An unusable selected entry does not trigger another account's credentials. `--mcp-url` can select an explicit matching MCP endpoint.
+
+The connection check has a five-second deadline, does not follow redirects or retry, and never logs in, refreshes credentials, creates sessions, or sends usage. Output includes a sanitized endpoint origin, account fingerprint, check time, and bounded result code. A successful connection confirms API access; it does not prove a usage sample was recorded.
+
 ## Architecture
 
 Tokanban runs on Cloudflare's edge stack:
@@ -205,6 +227,32 @@ flowchart LR
 ```
 
 The design goal is boring reliability for non-boring agent workflows: serialized writes, structured errors, retry-safe mutation paths, explicit scopes, and a durable record of what agents did and why.
+
+## Follow-up inbox
+
+Review private handoff suggestions across projects:
+
+```sh
+tokanban followup list --waiting-on self --historical all
+tokanban followup get FOLLOWUP_ID --format json
+tokanban followup plan FOLLOWUP_ID --output task-review.json
+# Review and edit the project, shared description, assignment and due date.
+tokanban followup accept FOLLOWUP_ID --file task-review.json
+```
+
+`edit`, `link`, `merge`, `dismiss`, `obsolete`, `resolve`, and `reopen` also accept
+`FOLLOWUP_ID --file reviewed.json` with the current `expected_revision`. Acceptance
+retries preserve the exact saved fields and never create a second task. If a
+request was interrupted, `plan` recovers its stored acceptance for retry. Private
+source context is not automatically copied into task descriptions.
+
+Preview older sessions with `followup backfill-preview --file selection.json
+--output import-review.json --format json`, review the saved source context, then
+explicitly import with `followup backfill-apply --file import-review.json`.
+Historical imports create suggestions only. `followup metrics --format json`
+separates source occurrences, review states, completed tasks, and unknown outcomes.
+Use `--project-id` to narrow cross-project reads; configuration defaults do not
+silently narrow the inbox. The dashboard is at `app.tokanban.com/dashboard/followups`.
 
 ## Links
 

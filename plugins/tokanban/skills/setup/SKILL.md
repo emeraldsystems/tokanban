@@ -56,55 +56,83 @@ Verify installation:
 tokanban auth status
 ```
 
+### Usage reporting
+
+If the user installs the Tokanban Claude Code plugin, token usage reporting is enabled automatically through plugin hooks. The SessionStart hook calls `tokanban session start-hook` to register the actual Claude session identity and supply its canonical Tokanban ID as context. Repeated starts reuse that ID. Stop and SessionEnd hooks call `tokanban session report-usage` to send measured cumulative tokens through MCP; absent telemetry sends a heartbeat without inventing zero usage. The reporter is best-effort and silent: failures do not affect the agent session.
+
+For CLI-only installs, run `tokanban init` instead of hand-editing settings. It is idempotent and safe to re-run:
+
+```bash
+tokanban init --dry-run          # preview planned changes (also the default with no flags)
+tokanban init --yes              # apply: MCP config + memory block + usage hooks
+tokanban init --harness codex --yes    # --harness: claude-code, codex, or cursor
+tokanban init --target-dir ./my-repo --yes
+```
+
+Without `--yes`, `init` only previews what it would do — nothing is written until you confirm with `--yes`. Each step is skip-if-present: existing MCP entries, memory blocks, and hooks are left untouched, and `init` refuses to touch a config file it can't safely parse rather than risk corrupting it. If the Claude Code marketplace plugin is already enabled, `init` detects that and does not register a duplicate usage hook.
+
 ## Step 3: MCP Server Configuration
 
 The Tokanban MCP server is a remote HTTP endpoint. Configuration depends on the user's agent.
 
+For Claude Code, Codex, or Cursor, `tokanban init --harness <claude-code|codex|cursor>` automates this step (see the "Usage reporting" note above). The manual snippets below are for advanced/manual setups or other MCP clients.
+
 ### Claude Code
 
-Add to `~/.claude.json` or run `claude mcp add`:
+Add to `~/.claude.json` (or `$CLAUDE_CONFIG_DIR/.claude.json` if that env var is set) or run `claude mcp add`. Claude Code's Streamable HTTP transport type is `"http"` (not `"url"`) — see [code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp):
 
 ```json
 {
   "mcpServers": {
     "tokanban": {
-      "type": "url",
+      "type": "http",
       "url": "https://api.tokanban.com/mcp",
       "headers": {
-        "Authorization": "Bearer <your-api-key>"
+        "Authorization": "Bearer ${TOKANBAN_API_KEY}",
+        "X-Tokanban-Tool-Scope": "core,memory"
       }
     }
   }
 }
 ```
+
+`${TOKANBAN_API_KEY}` is resolved from your shell environment by Claude Code itself; the key is never written into this file by `tokanban init`.
 
 ### Codex CLI
 
-Add to `~/.codex/config.json`:
+Codex uses **TOML**, not JSON: `$CODEX_HOME/config.toml` (default `~/.codex/config.toml`) — see [developers.openai.com/codex/mcp](https://developers.openai.com/codex/mcp). Add:
+
+```toml
+[mcp_servers.tokanban]
+url = "https://api.tokanban.com/mcp"
+bearer_token_env_var = "TOKANBAN_API_KEY"
+http_headers = { "X-Tokanban-Tool-Scope" = "core,memory" }
+```
+
+`bearer_token_env_var` tells Codex which environment variable to read the token from at runtime — Codex does not support `${VAR}` interpolation inside header/url strings the way Claude Code does. `tokanban init --harness codex --yes` appends this table as text to the end of your existing `config.toml`, preserving all existing content, comments, and formatting byte-for-byte (it never round-trips/reserializes the file). Restart Codex CLI to pick up the change.
+
+### Cursor
+
+`tokanban init --harness cursor --yes` writes `~/.cursor/mcp.json` (or `<project>/.cursor/mcp.json` if that already exists) directly, using Cursor's own `${env:VAR}` environment-interpolation syntax (distinct from Claude Code's `${VAR}`) and no `"type"` field:
 
 ```json
 {
   "mcpServers": {
     "tokanban": {
-      "type": "url",
       "url": "https://api.tokanban.com/mcp",
       "headers": {
-        "Authorization": "Bearer <your-api-key>"
+        "Authorization": "Bearer ${env:TOKANBAN_API_KEY}",
+        "X-Tokanban-Tool-Scope": "core,memory"
       }
     }
   }
 }
 ```
 
-Restart Codex CLI to pick up the change.
-
-### Cursor
-
-In Cursor, go to Settings > MCP Servers and add a remote server:
+To do it via the UI instead, go to Settings > MCP Servers and add a remote server:
 
 ```
 Name:    tokanban
-Type:    URL
 URL:     https://api.tokanban.com/mcp
 Headers: Authorization: Bearer <your-api-key>
 ```
@@ -118,6 +146,26 @@ Method:  POST (JSON-RPC 2.0)
 ```
 
 The server exposes task management, agent memory, project admin, sprint, and visualization tools. Discover them via the `tools/list` method.
+
+### Trimming the tool surface (lower per-session token usage)
+
+Every advertised tool's schema is re-sent in the model's cached prompt prefix on
+every turn, so a large tool surface inflates a session's token usage. You can ask
+the server to advertise only the tool groups you need with the
+`X-Tokanban-Tool-Scope` header (or the `?tools=` query param), comma-separated:
+
+| Group | Tools |
+|-------|-------|
+| `core` | tasks, project entities, sprints, tables/burndown, `usage_report`, `list_projects`, `list_members` |
+| `memory` | `session_*` and `memory_*` (cross-session memory) |
+| `admin` | project/member/workflow/rule administration and agent-key management |
+
+The Claude Code plugin ships with `"X-Tokanban-Tool-Scope": "core,memory"`, which
+covers day-to-day task + memory work while dropping the rarely-needed admin/key
+tools. To get everything back, set the header to `core,memory,admin` (or omit it
+entirely — no scope means all groups). Unknown group names are ignored, and
+`tools/call` is never scoped, so a scoped session can still invoke any tool it
+holds a valid API key for.
 
 ### Getting an API key
 
@@ -149,7 +197,7 @@ If the user already has an older agent key, guide them to rotate or recreate it 
 
 ### Behavioral block
 
-Add the appropriate memory block template to the harness config:
+`tokanban init` installs this automatically (skip-if-already-present). To do it by hand, add the appropriate memory block template to the harness config:
 
 - Claude Code: `cli/templates/CLAUDE.md.memory-block.md`
 - Codex CLI: `cli/templates/AGENTS.md.memory-block.md`
@@ -166,7 +214,7 @@ These blocks teach the harness to call:
 
 Ask the user to start a short session and verify the harness can:
 
-1. call `session_start`
+1. reuse the startup hook's canonical session ID, or call `session_start` once with the actual harness session identity when available
 2. call `memory_relevant_now`
 3. defer at least one candidate and write at least one explicit "remember this" item immediately
 4. close the session with `session_end`

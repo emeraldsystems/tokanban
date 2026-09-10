@@ -411,7 +411,7 @@ fn test_task_close_parses() {
         TestCli::try_parse_from(["test", "close", "PLAT-42", "--reason", "Duplicate"]).unwrap();
 
     match cli.cmd {
-        commands::task::TaskCommand::Close { key, reason } => {
+        commands::task::TaskCommand::Close { key, reason, .. } => {
             assert_eq!(key, "PLAT-42");
             assert_eq!(reason, Some("Duplicate".to_string()));
         }

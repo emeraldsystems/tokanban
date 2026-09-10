@@ -24,6 +24,19 @@ async fn run(cli: Cli) -> error::Result<()> {
         // Shell completions need no config or token.
         Command::Completion { shell } => return commands::completion::handle(shell),
 
+        // Doctor is read-only and offline by default: it works even when config is
+        // missing or malformed, so it never goes through the config `?` below.
+        Command::Doctor(args) => {
+            return commands::doctor::handle(
+                args,
+                cli.config.as_ref(),
+                cli.api_url.as_deref(),
+                output_format,
+                cli.no_color,
+            )
+            .await
+        }
+
         // Auth commands get direct config access (no token required)
         Command::Auth(cmd) => {
             let mut app_config = config::load_config(cli.config.as_ref())?;
@@ -34,6 +47,39 @@ async fn run(cli: Cli) -> error::Result<()> {
         // Local memory scoring does not need config or token.
         Command::Memory(cmd) => {
             return commands::memory::handle(cmd).await;
+        }
+
+        // Init bootstraps a harness (MCP config, memory block, usage hooks)
+        // and gets direct config access like `auth`/`doctor`: it must work
+        // without a token, and read-only steps must survive a missing or
+        // malformed config file rather than erroring out via the `?` below.
+        Command::Init(args) => {
+            let mut app_config = config::load_config(cli.config.as_ref()).map_err(|_| tokanban::error::CliError::Config("Tokanban config could not be read. Fix the selected config file before initializing a harness.".to_string()))?;
+            cli.apply_overrides(&mut app_config);
+            return commands::init::handle(args, &app_config, output_format, cli.no_color);
+        }
+
+        Command::Repo(commands::repo::RepoCommand::Inspect {
+            path,
+            binding: false,
+        }) => {
+            return commands::repo::handle_inspect_offline(
+                path.clone(),
+                output_format,
+                cli.no_color,
+            );
+        }
+
+        // Hidden session hook helpers are best-effort and manage auth resolution
+        // internally so hook failures never interrupt the calling harness.
+        Command::Session(cmd) => {
+            // A malformed selected account must not silently become the
+            // default account. Hooks remain best-effort without networking.
+            let Ok(mut app_config) = config::load_config(cli.config.as_ref()) else {
+                return Ok(());
+            };
+            cli.apply_overrides(&mut app_config);
+            return commands::session::handle(cmd, &app_config).await;
         }
 
         // All other commands require authentication
@@ -56,9 +102,14 @@ async fn run(cli: Cli) -> error::Result<()> {
                 .await?;
 
             match cmd {
-                Command::Auth(_) | Command::Completion { .. } | Command::Memory(_) => {
+                Command::Auth(_)
+                | Command::Completion { .. }
+                | Command::Memory(_)
+                | Command::Doctor(_) => {
                     unreachable!()
                 }
+                Command::Init(_) => unreachable!(),
+                Command::Session(_) => unreachable!(),
                 Command::Workspace(cmd) => commands::workspace::handle(cmd, &mut ctx).await,
                 Command::Project(cmd) => commands::project::handle(cmd, &mut ctx).await,
                 Command::Task(cmd) => commands::task::handle(cmd, &ctx).await,
@@ -70,6 +121,10 @@ async fn run(cli: Cli) -> error::Result<()> {
                 Command::Workflow(cmd) => commands::workflow::handle(cmd, &ctx).await,
                 Command::Import(cmd) => commands::import::handle(cmd, &ctx).await,
                 Command::Viz(cmd) => commands::viz::handle(cmd, &ctx).await,
+                Command::Usage(args) => commands::usage::handle(args, &ctx).await,
+                Command::Repo(cmd) => commands::repo::handle(cmd, &ctx).await,
+                Command::Git(cmd) => commands::git::handle(cmd, &ctx).await,
+                Command::Followup(cmd) => commands::followup::handle(cmd, &ctx).await,
             }
         }
     }

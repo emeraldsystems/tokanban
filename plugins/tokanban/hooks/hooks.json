@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tmp=$(mktemp \"${TMPDIR:-/tmp}/tokanban-usage.XXXXXX\") && cat > \"$tmp\" && (tokanban session report-usage < \"$tmp\" >/dev/null 2>&1; rm -f \"$tmp\") >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tmp=$(mktemp \"${TMPDIR:-/tmp}/tokanban-usage.XXXXXX\") && cat > \"$tmp\" && (tokanban session report-usage < \"$tmp\" >/dev/null 2>&1; rm -f \"$tmp\") >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tokanban session start-hook 2>/dev/null || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
