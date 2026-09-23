@@ -54,7 +54,12 @@ async fn run(cli: Cli) -> error::Result<()> {
         // without a token, and read-only steps must survive a missing or
         // malformed config file rather than erroring out via the `?` below.
         Command::Init(args) => {
-            let mut app_config = config::load_config(cli.config.as_ref()).map_err(|_| tokanban::error::CliError::Config("Tokanban config could not be read. Fix the selected config file before initializing a harness.".to_string()))?;
+            // Skill-only installation is offline and independent of account configuration.
+            let mut app_config = if args.skills_only {
+                config::AppConfig::default()
+            } else {
+                config::load_config(cli.config.as_ref()).map_err(|_| tokanban::error::CliError::Config("Tokanban config could not be read. Fix the selected config file before initializing a harness.".to_string()))?
+            };
             cli.apply_overrides(&mut app_config);
             return commands::init::handle(args, &app_config, output_format, cli.no_color);
         }

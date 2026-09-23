@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Engineer"
+  short_description: "Claim, implement, verify, and hand off work"
+  default_prompt: "Use $tokanban-engineer to implement this specific Tokanban task."

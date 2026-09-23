@@ -35,7 +35,9 @@ implementation work before editing. `--persona-key`, `--teammate-id`, and
 authenticated user's permissions. The Claude Code plugin supplies `/tokanban:pm`,
 `/tokanban:architect`, `/tokanban:engineer`, `/tokanban:reviewer`, and
 `/tokanban:researcher`, plus live PM context checkpoints during the current
-session.
+session. Codex uses the corresponding `$tokanban-pm`, `$tokanban-architect`,
+`$tokanban-engineer`, `$tokanban-reviewer`, and `$tokanban-researcher` skills
+(see [Codex skills](#codex-skills)).
 
 Mixed human and AI teams use the same persistent teammate IDs:
 
@@ -155,6 +157,63 @@ The plugin provides:
 - **Hooks and templates** for Claude Code, Codex CLI, and Cursor behavior blocks.
 
 The marketplace catalog is `.claude-plugin/marketplace.json`; plugin assets live in `plugins/tokanban/`.
+
+## Codex skills
+
+All eight Claude skill workflows also ship as native Codex skills. Install them
+into the repository where you want to use them:
+
+```sh
+# Preview, then install just the skills into .agents/skills
+tokanban init --harness codex --skills-only
+tokanban init --harness codex --skills-only --yes
+
+# Or initialize MCP configuration, the memory behavior block, and skills together
+tokanban init --harness codex --yes
+```
+
+Add `--target-dir /path/to/repo` to select a different repository. The CLI embeds
+all skill files, so installation needs no network or source checkout. Skills-only
+installation also works without a configured account and leaves MCP configuration
+and `AGENTS.md` unchanged. Repeating installation is a no-op for matching files;
+conflicting local edits are preserved and reported for review. Other skills are
+left alone. Restart Codex if newly installed skills do not appear in its picker.
+
+| Claude workflow | Codex skill | Purpose |
+| --- | --- | --- |
+| `/tokanban:pm` | `$tokanban-pm` | Product direction, planning, board health, and coordination |
+| `/tokanban:architect` | `$tokanban-architect` | Technical direction, tradeoffs, and dependencies |
+| `/tokanban:engineer` | `$tokanban-engineer` | Claimed implementation, verification, and handoff |
+| `/tokanban:reviewer` | `$tokanban-reviewer` | Completion review against requirements and evidence |
+| `/tokanban:researcher` | `$tokanban-researcher` | Focused investigation and reusable findings |
+| General Tokanban skill | `$tokanban` | Tasks, entities, teams, sprints, and CLI operations |
+| Setup skill | `$tokanban-setup` | CLI authentication and Codex configuration |
+| Memory skill | `$tokanban-memory` | Cross-session context and durable handoffs |
+
+Enable the desired personas on the project before using the role skills:
+
+```sh
+tokanban persona configure --project PLAT --enable pm --enable engineer
+tokanban persona list --project PLAT
+```
+
+Then ask Codex:
+
+```text
+$tokanban-pm Assess PLAT, reconcile its board, and plan the next feature.
+$tokanban-engineer Implement PLAT-42 and verify the acceptance criteria.
+```
+
+PM coordinates in the current conversation. It uses enabled specialists when
+the host supports and permits delegation, with sequential role work as a fallback.
+The skills explicitly load live project context and preserve teammate/run
+attribution and task claims. They do not install Claude lifecycle hooks or start
+a background worker. The memory skill uses the configured Tokanban MCP tools;
+CLI board and persona commands use CLI authentication.
+
+The source bundles live in `codex/skills/`. Until a new binary release is published,
+build the updated CLI from this checkout with `cargo install --path . --locked
+--force` before running the new installation commands.
 
 ## Agent Memory
 

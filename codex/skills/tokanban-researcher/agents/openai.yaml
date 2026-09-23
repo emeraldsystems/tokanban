@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Researcher"
+  short_description: "Resolve project questions with reusable evidence"
+  default_prompt: "Use $tokanban-researcher to investigate this project question."

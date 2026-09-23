@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Reviewer"
+  short_description: "Review delivery against durable project intent"
+  default_prompt: "Use $tokanban-reviewer to review this project's delivered work."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Project Manager"
+  short_description: "Plan and maintain an explicit Tokanban project"
+  default_prompt: "Use $tokanban-pm to assess and manage this Tokanban project."

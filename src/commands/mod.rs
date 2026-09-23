@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod auth;
+mod codex_skills;
 pub mod comment;
 pub mod completion;
 pub mod doctor;

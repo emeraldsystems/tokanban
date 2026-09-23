@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Setup"
+  short_description: "Install Tokanban skills, MCP, and authentication"
+  default_prompt: "Use $tokanban-setup to configure Tokanban for Codex in this repository."

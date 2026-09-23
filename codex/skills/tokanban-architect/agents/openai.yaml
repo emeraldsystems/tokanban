@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Architect"
+  short_description: "Make evidence-backed project design decisions"
+  default_prompt: "Use $tokanban-architect to evaluate this project's technical direction."

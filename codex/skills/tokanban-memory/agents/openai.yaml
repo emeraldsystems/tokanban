@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban Memory"
+  short_description: "Retrieve and preserve scoped Codex session memory"
+  default_prompt: "Use $tokanban-memory to retrieve context and preserve this Codex session's handoff."

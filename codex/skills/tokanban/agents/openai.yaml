@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tokanban"
+  short_description: "Manage Tokanban work with guarded ownership"
+  default_prompt: "Use $tokanban to inspect or update this explicit Tokanban project."

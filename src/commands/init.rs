@@ -3,6 +3,8 @@
 //! (`CLAUDE.md` / `AGENTS.md` / `.cursorrules`), and (Claude Code only)
 //! registers `SessionStart` plus `Stop` / `SessionEnd` usage-reporting hooks when the
 //! marketplace plugin is not already enabled.
+//! Codex also receives the bundled Tokanban skills in `<target>/.agents/skills`.
+//! `--skills-only --harness codex` installs only those skills.
 //!
 //! Every step is skip-if-present and never overwrites unrelated content. By
 //! default (no `--yes`) the command only previews planned changes; nothing is
@@ -84,7 +86,11 @@ pub struct InitArgs {
     #[arg(long)]
     pub yes: bool,
 
-    /// Directory to bootstrap for the behavioral block and project-scoped MCP config
+    /// Install only Codex skills, leaving MCP config and behavioral blocks unchanged
+    #[arg(long, requires = "harness")]
+    pub skills_only: bool,
+
+    /// Directory to bootstrap for skills, the behavioral block and project-scoped MCP config
     /// (defaults to the current directory)
     #[arg(long, value_name = "DIR")]
     pub target_dir: Option<PathBuf>,
@@ -312,7 +318,20 @@ pub fn handle(
     let harness = args.harness.unwrap_or_else(|| detect_harness(&paths));
     let apply = args.yes && !args.dry_run;
 
-    let report = run_init(&paths, harness, apply, cli_config)?;
+    let report = if args.skills_only {
+        if harness != Harness::Codex {
+            return Err(crate::error::CliError::InvalidInput(
+                "--skills-only requires --harness codex.".to_string(),
+            ));
+        }
+        InitReport {
+            harness: harness.label(),
+            applied: apply,
+            steps: super::codex_skills::install(&paths.target_dir, apply)?,
+        }
+    } else {
+        run_init(&paths, harness, apply, cli_config)?
+    };
 
     match format.resolve() {
         OutputFormat::Json => crate::format::print_json(&report),
@@ -344,11 +363,14 @@ pub fn run_init(
         Harness::Codex => step_mcp_config_codex(paths, cli_config, apply)?,
         Harness::Cursor => step_mcp_config_cursor(paths, cli_config, apply)?,
     };
-    let steps = vec![
+    let mut steps = vec![
         mcp_step,
         step_behavior_block(paths, harness, apply)?,
         step_usage_hook(paths, harness, apply)?,
     ];
+    if harness == Harness::Codex {
+        steps.extend(super::codex_skills::install(&paths.target_dir, apply)?);
+    }
     Ok(InitReport {
         harness: harness.label(),
         applied: apply,

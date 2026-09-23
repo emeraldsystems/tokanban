@@ -1008,6 +1008,23 @@ fn codex_skips_usage_hook_with_honest_note_and_writes_agents_md() {
 
     assert!(paths.target_dir.join("AGENTS.md").exists());
     assert!(!paths.target_dir.join("CLAUDE.md").exists());
+    let skills = paths.target_dir.join(".agents/skills");
+    for name in [
+        "tokanban",
+        "tokanban-setup",
+        "tokanban-memory",
+        "tokanban-pm",
+        "tokanban-architect",
+        "tokanban-engineer",
+        "tokanban-reviewer",
+        "tokanban-researcher",
+    ] {
+        assert!(skills.join(name).join("SKILL.md").is_file());
+        assert!(skills.join(name).join("agents/openai.yaml").is_file());
+    }
+    assert!(skills
+        .join("tokanban/references/cli-quick-ref.md")
+        .is_file());
 
     let doc = read_toml(&paths.codex_config_candidates[0]);
     assert!(toml_get(&doc, "mcp_servers")
