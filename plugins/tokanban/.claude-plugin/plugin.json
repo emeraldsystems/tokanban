@@ -1,6 +1,6 @@
 {
   "name": "tokanban",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Agent-first task management and cross-session memory for development teams. Install the CLI, configure the MCP server, and manage tasks, projects, sprints, workflows, and agent memory from Claude Code.",
   "author": {
     "name": "emeraldsystems",

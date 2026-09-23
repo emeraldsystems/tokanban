@@ -87,7 +87,7 @@ curl -fsSL https://app.tokanban.com/install.sh | sh
 Or install from Cargo:
 
 ```sh
-cargo install --locked --git https://github.com/emeraldsystems/tokanban --tag v0.4.0
+cargo install --locked --git https://github.com/emeraldsystems/tokanban --tag v0.5.0
 ```
 
 Pre-built binaries are published for Linux, macOS, and Windows on the [GitHub Releases](https://github.com/emeraldsystems/tokanban/releases) page. The install script downloads a matching binary when available and falls back to Cargo when needed.
@@ -211,9 +211,10 @@ attribution and task claims. They do not install Claude lifecycle hooks or start
 a background worker. The memory skill uses the configured Tokanban MCP tools;
 CLI board and persona commands use CLI authentication.
 
-The source bundles live in `codex/skills/`. Until a new binary release is published,
-build the updated CLI from this checkout with `cargo install --path . --locked
---force` before running the new installation commands.
+The source bundles live in `codex/skills/`. Codex skill installation requires
+Tokanban CLI 0.5.0 or later. Use a pre-built release binary, the tagged Cargo
+installation above, or build this checkout with `cargo install --path . --locked
+--force`.
 
 ## Agent Memory
 
