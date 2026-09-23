@@ -9,6 +9,43 @@ remain independent of the currently executing agent.
 
 Agent-first task management and durable memory for AI coding teams.
 
+## Project personas
+
+Tokanban projects can enable five built-in roles: PM, Architect, Engineer,
+Reviewer, and Researcher. PM is the default for newly created projects; other
+roles are opt-in. Enabling a role creates or reuses its persistent, assignable AI
+teammate. Execution still happens only in an active coding session.
+
+```sh
+# Use the PM default, or choose the initial enabled set explicitly
+tokanban project create "Platform" --key-prefix PLAT
+tokanban project create "Platform" --key-prefix PLAT --persona pm --persona engineer
+
+tokanban persona list --project PLAT
+tokanban persona configure --project PLAT --enable architect --enable reviewer
+tokanban persona teammates --project PLAT
+tokanban persona assignments engineer --project PLAT
+tokanban --format json persona context pm --project PLAT --compact
+```
+
+Assignment to an AI teammate queues responsibility; it does not start a worker
+or create a task claim. Each executing run uses a distinct session ID and claims
+implementation work before editing. `--persona-key`, `--teammate-id`, and
+`--session-id` attach provenance to supported mutations without changing the
+authenticated user's permissions. The Claude Code plugin supplies `/tokanban:pm`,
+`/tokanban:architect`, `/tokanban:engineer`, `/tokanban:reviewer`, and
+`/tokanban:researcher`, plus live PM context checkpoints during the current
+session.
+
+Mixed human and AI teams use the same persistent teammate IDs:
+
+```sh
+tokanban team create "Delivery"
+tokanban team add-member <team-id> --type human --member-id <user-id>
+tokanban team add-member <team-id> --type ai --member-id <teammate-id>
+tokanban team view <team-id>
+```
+
 Tokanban gives Claude Code, Codex CLI, Cursor, OpenCode, CI bots, and custom MCP clients one shared work layer: tasks agents can update safely, memory agents can carry across sessions, and audit trails humans can trust.
 
 <p align="center">

@@ -1,6 +1,6 @@
 ---
 name: tokanban
-description: "Use when the user asks about Tokanban task management, wants to create/update/list tasks, record decisions/findings/requirements, manage projects, run sprints, invite team members, manage agent tokens, update workflows, import from Jira/CSV, or visualize a board. Trigger phrases: 'tokanban', 'create a task', 'list tasks', 'decision record', 'finding', 'requirement', 'sprint board', 'kanban board', 'project backlog', 'assign task', 'close task', 'import from jira', 'tokanban agent', 'task priority', 'workflow status'."
+description: "Use when the user asks about Tokanban task management, project personas or AI teammates, wants to create/update/list tasks, record decisions/findings/requirements, manage projects or mixed teams, run sprints, invite team members, manage agent tokens, update workflows, import from Jira/CSV, or visualize a board."
 ---
 
 # Tokanban CLI & MCP Reference
@@ -164,6 +164,39 @@ tokanban project set PLAT
 ```
 
 After running `project set`, the `--project` flag can be omitted from other commands.
+
+## Project personas and AI teammates
+
+Personas are built-in roles; AI teammates are persistent assignable project
+participants; runs are active executions with distinct session IDs. Keep these
+identities separate. Enabling a persona is shared project configuration and does
+not mint execution credentials or expand permissions.
+
+```bash
+tokanban persona list --project PLAT
+tokanban persona configure --project PLAT --enable engineer --enable reviewer
+tokanban persona configure --project PLAT --disable researcher
+tokanban persona teammates --project PLAT
+tokanban persona assignments engineer --project PLAT
+tokanban --format json persona context pm --project PLAT --session <RUN_ID>
+```
+
+Only `pm`, `architect`, `engineer`, `reviewer`, and `researcher` are supported in
+v1. Assignment queues work; it never starts background execution. A context read
+failure is unavailable state, not an empty board or disabled persona. For
+persona-originated mutations, pass `--persona-key`, `--teammate-id`, and
+`--session-id` globally. Pass equivalent fields to MCP task/entity mutations.
+
+## Mixed human and AI teams
+
+```bash
+tokanban team list
+tokanban team create "Delivery"
+tokanban team add-member <team-id> --type human --member-id <user-id>
+tokanban team add-member <team-id> --type ai --member-id <teammate-id>
+tokanban team remove-member <team-id> --type ai --member-id <teammate-id>
+tokanban team view <team-id>
+```
 
 ## Sprints
 

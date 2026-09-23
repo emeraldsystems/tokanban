@@ -96,6 +96,11 @@ async fn run(cli: Cli) -> error::Result<()> {
                 output_format,
                 cli.no_color,
             )?;
+            ctx.api.set_run_attribution(
+                cli.persona_key.clone(),
+                cli.teammate_id.clone(),
+                cli.session_id.clone(),
+            );
 
             // Silently refresh token if needed
             auth::ensure_valid_token(&mut ctx.config, &mut ctx.api, ctx.config_path.as_ref())
@@ -112,6 +117,8 @@ async fn run(cli: Cli) -> error::Result<()> {
                 Command::Session(_) => unreachable!(),
                 Command::Workspace(cmd) => commands::workspace::handle(cmd, &mut ctx).await,
                 Command::Project(cmd) => commands::project::handle(cmd, &mut ctx).await,
+                Command::Persona(cmd) => commands::persona::handle(cmd, &ctx).await,
+                Command::Team(cmd) => commands::team::handle(cmd, &ctx).await,
                 Command::Task(cmd) => commands::task::handle(cmd, &ctx).await,
                 Command::Entity(cmd) => commands::entity::handle(cmd, &ctx).await,
                 Command::Sprint(cmd) => commands::sprint::handle(cmd, &ctx).await,

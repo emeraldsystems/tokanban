@@ -254,3 +254,45 @@ async fn test_set_access_token() {
     let result: TestResponse = client.get("/api/tasks").await.unwrap();
     assert_eq!(result.key, "TEST");
 }
+
+#[tokio::test]
+async fn test_put_run_attribution_and_no_content_delete() {
+    use wiremock::matchers::{header, method, path};
+    use wiremock::{Mock, ResponseTemplate};
+
+    let server = MockServer::start().await;
+    Mock::given(method("PUT"))
+        .and(path("/v1/projects/p1/personas"))
+        .and(header("x-tokanban-persona-key", "pm"))
+        .and(header("x-tokanban-teammate-id", "mate-pm"))
+        .and(header("x-tokanban-session-id", "session-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "personas": []
+        })))
+        .mount(&server.inner)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/v1/teams/team-1"))
+        .respond_with(ResponseTemplate::new(204))
+        .mount(&server.inner)
+        .await;
+
+    let mut client =
+        tokanban::api::ApiClient::new(&server.base_url(), 30, Some("token".to_string())).unwrap();
+    client.set_run_attribution(
+        Some("pm".to_string()),
+        Some("mate-pm".to_string()),
+        Some("session-1".to_string()),
+    );
+    let personas: tokanban::api::PersonaListResponse = client
+        .put(
+            "/v1/projects/p1/personas",
+            &serde_json::json!({ "enabled": ["pm"] }),
+        )
+        .await
+        .unwrap();
+    assert!(personas.personas.is_empty());
+
+    let deleted: () = client.delete("/v1/teams/team-1").await.unwrap();
+    assert_eq!(deleted, ());
+}

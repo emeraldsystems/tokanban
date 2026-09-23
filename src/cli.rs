@@ -46,6 +46,18 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub api_url: Option<String>,
 
+    /// Persona responsible for this run (audit attribution; does not grant access)
+    #[arg(long, global = true, hide = true)]
+    pub persona_key: Option<String>,
+
+    /// Persistent AI teammate responsible for this run
+    #[arg(long, global = true, hide = true)]
+    pub teammate_id: Option<String>,
+
+    /// Active coding-session/run identifier
+    #[arg(long, global = true, hide = true)]
+    pub session_id: Option<String>,
+
     #[command(subcommand)]
     pub command: Command,
 }
@@ -80,6 +92,14 @@ pub enum Command {
     /// Project management
     #[command(subcommand)]
     Project(commands::project::ProjectCommand),
+
+    /// Project personas, activation, AI teammates, and live context
+    #[command(subcommand)]
+    Persona(commands::persona::PersonaCommand),
+
+    /// Mixed human and AI teams
+    #[command(subcommand)]
+    Team(commands::team::TeamCommand),
 
     /// Git repository connections and task pull requests
     #[command(subcommand)]

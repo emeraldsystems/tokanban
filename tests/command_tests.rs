@@ -615,12 +615,106 @@ fn test_project_create_requires_name_and_prefix() {
     let cli =
         TestCli::try_parse_from(["test", "create", "My Project", "--key-prefix", "PROJ"]).unwrap();
     match cli.cmd {
-        commands::project::ProjectCommand::Create { name, key_prefix } => {
+        commands::project::ProjectCommand::Create {
+            name,
+            key_prefix,
+            personas,
+        } => {
             assert_eq!(name, "My Project");
             assert_eq!(key_prefix, "PROJ");
+            assert!(personas.is_empty());
         }
         _ => panic!("expected ProjectCommand::Create"),
     }
+}
+
+#[test]
+fn test_project_create_accepts_personas() {
+    let cli = Cli::try_parse_from([
+        "tokanban",
+        "project",
+        "create",
+        "My Project",
+        "--key-prefix",
+        "PROJ",
+        "--persona",
+        "pm",
+        "--persona",
+        "engineer",
+    ])
+    .unwrap();
+    match cli.command {
+        tokanban::cli::Command::Project(commands::project::ProjectCommand::Create {
+            personas,
+            ..
+        }) => assert_eq!(personas, vec!["pm", "engineer"]),
+        other => panic!("expected project create, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_persona_context_and_configure_parse() {
+    let context = Cli::try_parse_from([
+        "tokanban",
+        "persona",
+        "context",
+        "engineer",
+        "--session",
+        "run-1",
+        "--compact",
+    ])
+    .unwrap();
+    assert!(matches!(
+        context.command,
+        tokanban::cli::Command::Persona(commands::persona::PersonaCommand::Context {
+            persona,
+            session: Some(session),
+            compact: true,
+            ..
+        }) if persona == "engineer" && session == "run-1"
+    ));
+
+    let configure = Cli::try_parse_from([
+        "tokanban",
+        "persona",
+        "configure",
+        "--enable",
+        "architect",
+        "--disable",
+        "researcher",
+    ])
+    .unwrap();
+    assert!(matches!(
+        configure.command,
+        tokanban::cli::Command::Persona(commands::persona::PersonaCommand::Configure {
+            enable,
+            disable,
+            ..
+        }) if enable == vec!["architect"] && disable == vec!["researcher"]
+    ));
+}
+
+#[test]
+fn test_team_ai_member_command_parses() {
+    let add = Cli::try_parse_from([
+        "tokanban",
+        "team",
+        "add-member",
+        "team-1",
+        "--type",
+        "ai",
+        "--member-id",
+        "mate-1",
+    ])
+    .unwrap();
+    assert!(matches!(
+        add.command,
+        tokanban::cli::Command::Team(commands::team::TeamCommand::AddMember {
+            id,
+            member_type,
+            member_id,
+        }) if id == "team-1" && member_type == "ai" && member_id == "mate-1"
+    ));
 }
 
 // ============================================================================

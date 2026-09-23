@@ -18,6 +18,9 @@ pub enum ProjectCommand {
         /// Key prefix for task IDs (e.g., PLAT)
         #[arg(long)]
         key_prefix: String,
+        /// Enable built-in personas (repeatable). Omit to use the PM default.
+        #[arg(long = "persona")]
+        personas: Vec<String>,
     },
     /// List projects in workspace
     List {
@@ -55,7 +58,11 @@ pub enum ProjectCommand {
 
 pub async fn handle(cmd: &ProjectCommand, ctx: &mut Ctx) -> Result<()> {
     match cmd {
-        ProjectCommand::Create { name, key_prefix } => handle_create(ctx, name, key_prefix).await,
+        ProjectCommand::Create {
+            name,
+            key_prefix,
+            personas,
+        } => handle_create(ctx, name, key_prefix, personas).await,
         ProjectCommand::List { workspace } => handle_list(ctx, workspace.clone()).await,
         ProjectCommand::View { key } => handle_view(ctx, key).await,
         ProjectCommand::Update {
@@ -68,11 +75,14 @@ pub async fn handle(cmd: &ProjectCommand, ctx: &mut Ctx) -> Result<()> {
     }
 }
 
-async fn handle_create(ctx: &Ctx, name: &str, key_prefix: &str) -> Result<()> {
-    let body = json!({
+async fn handle_create(ctx: &Ctx, name: &str, key_prefix: &str, personas: &[String]) -> Result<()> {
+    let mut body = json!({
         "name": name,
         "key_prefix": key_prefix,
     });
+    if !personas.is_empty() {
+        body["personas"] = json!(crate::commands::persona::normalize_persona_keys(personas)?);
+    }
 
     let resp: ProjectDetailResponse = ctx.api.post("/v1/projects", &body).await?;
 

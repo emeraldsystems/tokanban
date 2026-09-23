@@ -327,7 +327,7 @@ async fn handle_list(
         url.push_str(&format!("&status={}", enc(&normalized)));
     }
     if let Some(a) = assignee {
-        url.push_str(&format!("&assignee={}", enc(a)));
+        url.push_str(&format!("&assignee_id={}", enc(a)));
     }
     if let Some(s) = sprint {
         url.push_str(&format!("&sprint_id={}", enc(s)));

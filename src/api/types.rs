@@ -118,7 +118,7 @@ pub struct MutationResponse {
 // Task API types
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TaskItem {
     pub id: String,
     pub key: String,
@@ -131,6 +131,8 @@ pub struct TaskItem {
     #[serde(default)]
     pub assignee: Option<AssigneeInfo>,
     #[serde(default)]
+    pub assignee_id: Option<String>,
+    #[serde(default)]
     pub sprint: Option<SprintRef>,
     #[serde(default)]
     pub due_date: Option<String>,
@@ -140,7 +142,7 @@ pub struct TaskItem {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TaskDetailResponse {
     pub id: String,
     pub key: String,
@@ -154,6 +156,8 @@ pub struct TaskDetailResponse {
     pub priority: Option<String>,
     #[serde(default)]
     pub assignee: Option<AssigneeInfo>,
+    #[serde(default)]
+    pub assignee_id: Option<String>,
     #[serde(default)]
     pub sprint: Option<SprintRef>,
     #[serde(default)]
@@ -193,6 +197,10 @@ pub struct TaskOwnership {
     pub acquired_at: String,
     pub expires_at: String,
     pub state: String,
+    #[serde(default)]
+    pub persona_key: Option<String>,
+    #[serde(default)]
+    pub teammate_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -201,6 +209,10 @@ pub struct AssigneeInfo {
     pub name: String,
     #[serde(default)]
     pub email: Option<String>,
+    #[serde(default, rename = "type")]
+    pub member_type: Option<String>,
+    #[serde(default)]
+    pub persona_key: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -267,7 +279,7 @@ pub struct ProjectEntityItem {
 // Project API types
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectItem {
     pub id: String,
     #[serde(default)]
@@ -282,7 +294,7 @@ pub struct ProjectItem {
     pub created_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectDetailResponse {
     pub id: String,
     #[serde(default)]
@@ -301,4 +313,99 @@ pub struct ProjectDetailResponse {
     pub created_at: Option<String>,
     #[serde(default, deserialize_with = "deserialize_optional_stringish")]
     pub updated_at: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// Personas, AI teammates, and mixed teams
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PersonaItem {
+    pub key: String,
+    pub name: String,
+    pub description: String,
+    pub enabled: bool,
+    #[serde(default)]
+    pub teammate_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PersonaListResponse {
+    #[serde(default)]
+    pub personas: Vec<PersonaItem>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiTeammateItem {
+    pub id: String,
+    pub project_id: String,
+    pub persona_key: String,
+    pub name: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiTeammateListResponse {
+    #[serde(default)]
+    pub items: Vec<AiTeammateItem>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TeamMemberItem {
+    pub member_type: String,
+    pub member_id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TeamItem {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub workspace_id: Option<String>,
+    #[serde(default)]
+    pub members: Vec<TeamMemberItem>,
+    #[serde(default, deserialize_with = "deserialize_optional_stringish")]
+    pub created_at: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_stringish")]
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TeamListResponse {
+    #[serde(default)]
+    pub items: Vec<TeamItem>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PersonaContextResponse {
+    pub active: bool,
+    pub persona: PersonaItem,
+    pub project: ProjectDetailResponse,
+    #[serde(default)]
+    pub teammate: Option<AiTeammateItem>,
+    #[serde(default)]
+    pub assigned_tasks: Vec<TaskItem>,
+    #[serde(default)]
+    pub tasks: Vec<TaskItem>,
+    #[serde(default)]
+    pub entities: Vec<ProjectEntityItem>,
+    #[serde(default)]
+    pub enabled_specialists: Vec<String>,
+    #[serde(default)]
+    pub session_id: Option<String>,
+    pub task_coverage: PersonaContextCoverage,
+    pub assignment_coverage: PersonaContextCoverage,
+    pub entity_coverage: PersonaContextCoverage,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PersonaContextCoverage {
+    pub scanned: usize,
+    pub returned: usize,
+    pub total: u64,
+    pub scan_complete: bool,
+    pub selection_truncated: bool,
+    #[serde(default)]
+    pub next_cursor: Option<String>,
 }

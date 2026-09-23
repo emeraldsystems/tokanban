@@ -11,6 +11,9 @@ pub struct ApiClient {
     client: Client,
     base_url: String,
     access_token: Option<String>,
+    persona_key: Option<String>,
+    teammate_id: Option<String>,
+    session_id: Option<String>,
 }
 
 impl ApiClient {
@@ -23,11 +26,33 @@ impl ApiClient {
             client,
             base_url: base_url.trim_end_matches('/').to_string(),
             access_token,
+            persona_key: std::env::var("TOKANBAN_PERSONA_KEY").ok(),
+            teammate_id: std::env::var("TOKANBAN_TEAMMATE_ID").ok(),
+            session_id: std::env::var("TOKANBAN_SESSION_ID").ok(),
         })
     }
 
     pub fn set_access_token(&mut self, token: String) {
         self.access_token = Some(token);
+    }
+
+    /// Attach active-run provenance to supported mutations. These values are
+    /// audit metadata only; the backend continues to authorize the bearer.
+    pub fn set_run_attribution(
+        &mut self,
+        persona_key: Option<String>,
+        teammate_id: Option<String>,
+        session_id: Option<String>,
+    ) {
+        if persona_key.is_some() {
+            self.persona_key = persona_key;
+        }
+        if teammate_id.is_some() {
+            self.teammate_id = teammate_id;
+        }
+        if session_id.is_some() {
+            self.session_id = session_id;
+        }
     }
 
     /// Send a GET request to the given API path.
@@ -42,6 +67,15 @@ impl ApiClient {
         body: &B,
     ) -> Result<T> {
         self.request(Method::POST, path, Some(body)).await
+    }
+
+    /// Send a PUT request with a JSON body.
+    pub async fn put<T: DeserializeOwned, B: serde::Serialize>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<T> {
+        self.request(Method::PUT, path, Some(body)).await
     }
 
     /// Send a PATCH request with a JSON body.
@@ -79,6 +113,15 @@ impl ApiClient {
         let mut req = self.client.post(&url).multipart(form);
         if let Some(token) = &self.access_token {
             req = req.bearer_auth(token);
+        }
+
+        if let (Some(persona), Some(teammate)) = (&self.persona_key, &self.teammate_id) {
+            req = req
+                .header("X-Tokanban-Persona-Key", persona)
+                .header("X-Tokanban-Teammate-Id", teammate);
+        }
+        if let Some(session) = &self.session_id {
+            req = req.header("X-Tokanban-Session-Id", session);
         }
         let resp = req.send().await?;
         Self::parse_response(resp).await
@@ -141,6 +184,15 @@ impl ApiClient {
             req = req.bearer_auth(token);
         }
 
+        if let (Some(persona), Some(teammate)) = (&self.persona_key, &self.teammate_id) {
+            req = req
+                .header("X-Tokanban-Persona-Key", persona)
+                .header("X-Tokanban-Teammate-Id", teammate);
+        }
+        if let Some(session) = &self.session_id {
+            req = req.header("X-Tokanban-Session-Id", session);
+        }
+
         if let Some(body) = body {
             req = req.json(body);
         }
@@ -152,13 +204,19 @@ impl ApiClient {
     async fn parse_response<T: DeserializeOwned>(resp: Response) -> Result<T> {
         let status = resp.status();
 
+        let body = resp.text().await.unwrap_or_default();
         if status.is_success() {
-            let parsed = resp.json::<T>().await?;
-            return Ok(parsed);
+            // DELETE endpoints commonly return 204. Serde represents unit as
+            // JSON null, so callers can request `()` without a special API.
+            let payload = if body.trim().is_empty() {
+                "null"
+            } else {
+                &body
+            };
+            return Ok(serde_json::from_str::<T>(payload)?);
         }
 
         // Try to parse structured error from API
-        let body = resp.text().await.unwrap_or_default();
         if let Ok(api_err) = serde_json::from_str::<ApiErrorResponse>(&body) {
             return Err(CliError::Api {
                 code: api_err.error.code,

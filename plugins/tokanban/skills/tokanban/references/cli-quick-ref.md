@@ -44,6 +44,32 @@ Keys follow `PROJECT-{DEC,FND,REQ}-<id>`, for example `PLAT-DEC-1`.
 | `tokanban project archive <KEY>` | Archive project |
 | `tokanban project set <KEY>` | Set default project |
 
+## Persona Commands
+
+| Command | Description |
+|---------|-------------|
+| `tokanban persona list` | Show shared activation and teammate IDs |
+| `tokanban persona configure --enable <KEY> [--disable <KEY>]` | Change enabled built-in roles |
+| `tokanban persona teammates` | List persistent assignable AI teammates |
+| `tokanban persona assignments <KEY>` | List tasks queued for a persona teammate |
+| `tokanban --format json persona context <KEY> [--session RUN]` | Load live project, task, entity, activation, and teammate context |
+
+Built-in keys are `pm`, `architect`, `engineer`, `reviewer`, and `researcher`.
+Assignment does not create a run or ownership claim. Context failures must not be
+interpreted as disabled activation or an empty board.
+
+## Team Commands
+
+| Command | Description |
+|---------|-------------|
+| `tokanban team list` | List teams |
+| `tokanban team create <NAME>` | Create a mixed-member team |
+| `tokanban team view <ID>` | View human and AI membership |
+| `tokanban team update <ID> --name <NAME>` | Rename a team |
+| `tokanban team add-member <ID> --type human\|ai --member-id <ID>` | Add a human or AI teammate |
+| `tokanban team remove-member <ID> --type human\|ai --member-id <ID>` | Remove a member |
+| `tokanban team delete <ID>` | Delete a team |
+
 ## Sprint Commands
 | Command | Description |
 |---------|-------------|
